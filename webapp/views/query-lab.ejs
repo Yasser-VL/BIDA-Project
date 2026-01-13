@@ -93,9 +93,9 @@
         }
 
         .stat-card {
-            background: rgba(13, 43, 54, 0.3);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
             border-radius: 16px;
             padding: 1.25rem;
             transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
@@ -186,9 +186,9 @@
 
         /* Query Selector */
         .query-selector {
-            background: rgba(13, 43, 54, 0.4);
+            background: var(--glass-bg);
             backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
             border-radius: 20px;
             padding: 1.5rem;
             height: fit-content;
@@ -226,8 +226,8 @@
             display: block;
             width: 100%;
             background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: var(--neutral-light);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
             padding: 0.6rem 0.8rem;
             margin-bottom: 0.4rem;
             border-radius: 10px;
@@ -309,9 +309,9 @@
 
         .editor-box,
         .output-box {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
             border-radius: 20px;
             padding: 1.5rem;
             position: relative;

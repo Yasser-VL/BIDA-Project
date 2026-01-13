@@ -156,9 +156,9 @@
         /* Terminal Window */
         .terminal-window {
             flex: 1;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
             border-radius: 16px;
             overflow: hidden;
             display: flex;
@@ -185,8 +185,8 @@
             align-items: center;
             justify-content: space-between;
             padding: 0.75rem 1rem;
-            background: rgba(0, 0, 0, 0.3);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .titlebar-dots {
@@ -302,9 +302,9 @@
 
         /* Info Panel */
         .info-panel {
-            background: rgba(13, 43, 54, 0.5);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
             border-radius: 12px;
             padding: 1rem 1.5rem;
             margin-top: 1rem;
@@ -337,7 +337,7 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary);
         }
 
         .info-value {
