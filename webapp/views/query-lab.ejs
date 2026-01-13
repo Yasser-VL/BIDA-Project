@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Query Lab · Bida</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        /* Main Container */
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem 2rem;
+            min-height: 100vh;
+        }
+
+        /* Header with Stats */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--neutral-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo span {
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--mongo-green) 0%, var(--mongo-green-alt) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--neutral-light);
+            opacity: 0.7;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* Realtime Stats Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-card {
+            background: rgba(13, 43, 54, 0.3);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.25rem;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(19, 170, 82, 0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: rgba(19, 170, 82, 0.3);
+            box-shadow: 0 20px 60px rgba(19, 170, 82, 0.15);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.6;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-icon {
+            font-size: 1rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--mongo-green);
+            line-height: 1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-pulse {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--mongo-green);
+            margin-left: 0.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(19, 170, 82, 0.7);
+            }
+
+            50% {
+                opacity: 0.3;
+                transform: scale(1.3);
+                box-shadow: 0 0 0 10px rgba(19, 170, 82, 0);
+            }
+        }
+
+        /* Query Lab Interface */
+        .lab-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        /* Query Selector */
+        .query-selector {
+            background: rgba(13, 43, 54, 0.4);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 1rem;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+
+        .selector-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .query-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .query-group-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            opacity: 0.5;
+            margin-bottom: 0.6rem;
+        }
+
+        .query-btn {
+            display: block;
+            width: 100%;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--neutral-light);
+            padding: 0.6rem 0.8rem;
+            margin-bottom: 0.4rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8rem;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .query-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 3px;
+            height: 0%;
+            background: var(--mongo-green);
+            transition: height 0.3s ease;
+            transform: translateY(-50%);
+        }
+
+        .query-btn:hover {
+            background: rgba(19, 170, 82, 0.08);
+            border-color: rgba(19, 170, 82, 0.3);
+            transform: translateX(3px);
+        }
+
+        .query-btn:hover::before {
+            height: 70%;
+        }
+
+        .query-btn.active {
+            background: rgba(19, 170, 82, 0.15);
+            border-color: var(--mongo-green);
+        }
+
+        .query-btn.active::before {
+            height: 70%;
+        }
+
+        .query-btn.favorited {
+            border-color: var(--accent-orange);
+        }
+
+        .query-btn.favorited .fav-icon {
+            color: var(--accent-orange);
+        }
+
+        .fav-icon {
+            float: right;
+            opacity: 0.3;
+            transition: all 0.3s ease;
+        }
+
+        .query-btn:hover .fav-icon {
+            opacity: 1;
+        }
+
+        .reset-btn {
+            margin-top: 1rem;
+            border-color: rgba(235, 87, 87, 0.3);
+            color: #EB5757;
+        }
+
+        .reset-btn:hover {
+            background: rgba(235, 87, 87, 0.1);
+            border-color: #EB5757;
+        }
+
+        /* Query Editor & Output */
+        .editor-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .editor-box,
+        .output-box {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .editor-box::after,
+        .output-box::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(19, 170, 82, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .box-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            opacity: 0.6;
+        }
+
+        .box-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--neutral-light);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .icon-btn:hover {
+            background: rgba(19, 170, 82, 0.1);
+            border-color: var(--mongo-green);
+        }
+
+        .execute-btn {
+            background: linear-gradient(135deg, var(--mongo-green) 0%, var(--mongo-green-alt) 100%);
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            box-shadow: 0 4px 20px rgba(19, 170, 82, 0.3);
+        }
+
+        .execute-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(19, 170, 82, 0.4);
+        }
+
+        .execute-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        #query-editor {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #A5D6A7;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            resize: none;
+            outline: none;
+            position: relative;
+            z-index: 1;
+            line-height: 1.6;
+            height: 220px;
+        }
+
+        #output {
+            color: var(--neutral-light);
+            white-space: pre-wrap;
+            min-height: 250px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        .success {
+            color: var(--mongo-green);
+        }
+
+        .error {
+            color: #EB5757;
+        }
+
+        /* Data Modal */
+        .data-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .data-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(13, 43, 54, 0.95);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--mongo-green);
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: rgba(235, 87, 87, 0.1);
+            border: 1px solid rgba(235, 87, 87, 0.3);
+            color: #EB5757;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(235, 87, 87, 0.2);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .data-table th {
+            background: rgba(19, 170, 82, 0.1);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--mongo-green);
+            border-bottom: 2px solid rgba(19, 170, 82, 0.3);
+        }
+
+        .data-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .data-table tr:hover {
+            background: rgba(19, 170, 82, 0.05);
+        }
+
+        /* Keyboard shortcuts panel */
+        .shortcuts-panel {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: rgba(13, 43, 54, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 0.75rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .shortcuts-panel.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .shortcut-key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--mongo-green);
+        }
+
+        /* Query history */
+        .history-panel {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .history-item {
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .history-item:hover {
+            background: rgba(19, 170, 82, 0.1);
+            border-color: var(--mongo-green);
+        }
+
+        .history-time {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-top: 0.25rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .lab-container {
+                grid-template-columns: 1fr;
+            }
+
+            .query-selector {
+                position: relative;
+                top: 0;
+                max-height: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(19, 170, 82, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(19, 170, 82, 0.5);
+        }
+
+        /* Syntax highlighting for code blocks */
+        .hljs {
+            background: transparent !important;
+            padding: 0 !important;
+        }
+
+        /* Loading animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--mongo-green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Ambient Orbs -->
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <!-- Particle Canvas -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Keyboard Shortcuts Panel -->
+    <div class="shortcuts-panel" id="shortcuts-panel">
+        <div style="margin-bottom: 0.5rem; font-weight: 600; color: var(--mongo-green);">⌨️ Shortcuts</div>
+        <div class="shortcut-item">
+            <span>Execute</span>
+            <span class="shortcut-key">Ctrl+Enter</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Reset</span>
+            <span class="shortcut-key">Ctrl+R</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Help</span>
+            <span class="shortcut-key">?</span>
+        </div>
+    </div>
+
+    <!-- Data Modal -->
+    <div class="data-modal" id="data-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Collection Data</h2>
+                <button class="close-btn" onclick="closeModal()">✕ Close</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">BIDA <span>Query Lab</span></h1>
+            <p class="subtitle">MongoDB · Realtime · Interactive</p>
+        </header>
+
+        <!-- Realtime Stats -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card" onclick="showCollectionData('courses')">
+                <div class="stat-label"><span class="stat-icon">📚</span> Courses</div>
+                <div class="stat-value" id="stat-courses">
+                    <%= stats.courses %><span class="stat-pulse"></span>
+                </div>
+            </div>
+            <div class="stat-card" onclick="showCollectionData('students')">
+                <div class="stat-label"><span class="stat-icon">👥</span> Students</div>
+                <div class="stat-value" id="stat-students">
+                    <%= stats.students %><span class="stat-pulse"></span>
+                </div>
+            </div>
+            <div class="stat-card" onclick="showCollectionData('enrollments')">
+                <div class="stat-label"><span class="stat-icon">📝</span> Enrollments</div>
+                <div class="stat-value" id="stat-enrollments">
+                    <%= stats.enrollments %><span class="stat-pulse"></span>
+                </div>
+            </div>
+            <div class="stat-card" onclick="showCollectionData('instructors')">
+                <div class="stat-label"><span class="stat-icon">👨‍🏫</span> Instructors</div>
+                <div class="stat-value" id="stat-instructors">
+                    <%= stats.instructors %><span class="stat-pulse"></span>
+                </div>
+            </div>
+            <div class="stat-card" onclick="showCollectionData('categories')">
+                <div class="stat-label"><span class="stat-icon">🏷️</span> Categories</div>
+                <div class="stat-value" id="stat-categories">
+                    <%= stats.categories %><span class="stat-pulse"></span>
+                </div>
+            </div>
+            <div class="stat-card" onclick="showCollectionData('reviews')">
+                <div class="stat-label"><span class="stat-icon">⭐</span> Reviews</div>
+                <div class="stat-value" id="stat-reviews">
+                    <%= stats.reviews %><span class="stat-pulse"></span>
+                </div>
+            </div>
+            <div class="stat-card" onclick="showCollectionData('payments')">
+                <div class="stat-label"><span class="stat-icon">💳</span> Payments</div>
+                <div class="stat-value" id="stat-payments">
+                    <%= stats.payments %><span class="stat-pulse"></span>
+                </div>
+            </div>
+
+            <!-- Navigation Cards -->
+            <div class="stat-card" onclick="window.location.href='/terminal'" style="border-color: #3b82f6;">
+                <div class="stat-label"><span class="stat-icon">💻</span> Open</div>
+                <div class="stat-value" style="font-size: 1.2rem; color: #3b82f6;">Terminal <span class="stat-pulse"
+                        style="background: rgba(59, 130, 246, 0.4);"></span></div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='/mongodb-tutorial'" style="border-color: #f59e0b;">
+                <div class="stat-label"><span class="stat-icon">📖</span> Learning</div>
+                <div class="stat-value" style="font-size: 1.2rem; color: #f59e0b;">Guide <span class="stat-pulse"
+                        style="background: rgba(245, 158, 11, 0.4);"></span></div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='/project-documentation'"
+                style="border-color: #8b5cf6;">
+                <div class="stat-label"><span class="stat-icon">📋</span> Project</div>
+                <div class="stat-value" style="font-size: 1.2rem; color: #8b5cf6;">Documentation <span
+                        class="stat-pulse" style="background: rgba(139, 92, 246, 0.4);"></span></div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='/data-generator'" style="border-color: #00ed64;">
+                <div class="stat-label"><span class="stat-icon">⚙️</span> Architecture</div>
+                <div class="stat-value" style="font-size: 1.2rem; color: #00ed64;">Data Engine <span class="stat-pulse"
+                        style="background: rgba(0, 237, 100, 0.4);"></span></div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='/quiz'" style="border-color: #ec4899;">
+                <div class="stat-label"><span class="stat-icon">🎓</span> A little fun</div>
+                <div class="stat-value" style="font-size: 1.2rem; color: #ec4899;">MongoDB Quiz <span class="stat-pulse"
+                        style="background: rgba(236, 72, 153, 0.4);"></span></div>
+            </div>
+        </div>
+
+        <!-- Query Lab -->
+        <div class="lab-container">
+            <!-- Query Selector -->
+            <aside class="query-selector">
+                <h2 class="selector-title">🔍 Queries</h2>
+                <div class="query-group">
+                    <div class="query-group-title">A. FULL CRUD</div>
+                    <button class="query-btn" onclick="loadQuery('crud-create')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'crud-create')">★</span> 1. Add a new
+                        course
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('crud-read')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'crud-read')">★</span> 2. Find courses by
+                        category
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('crud-update')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'crud-update')">★</span> 3. Update price
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('crud-delete')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'crud-delete')">★</span> 4. Delete
+                        inactive students
+                    </button>
+                </div>
+
+                <div class="query-group">
+                    <div class="query-group-title">B. ADVANCED QUERIES</div>
+                    <button class="query-btn" onclick="loadQuery('advanced-top')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'advanced-top')">★</span> 5. Top 5 highest
+                        rated courses
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('advanced-country')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'advanced-country')">★</span> 6. List
+                        students by country
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('advanced-status')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'advanced-status')">★</span> 7. Count
+                        enrollments by status
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('advanced-revenue')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'advanced-revenue')">★</span> 8. Calculate
+                        total revenue
+                    </button>
+                </div>
+
+                <div class="query-group">
+                    <div class="query-group-title">C. JOINS AND AGGREGATIONS</div>
+                    <button class="query-btn" onclick="loadQuery('agg-join')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'agg-join')">★</span> 9.
+                        Course-enrollment-student join
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('agg-category')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'agg-category')">★</span> 10. Stats by
+                        course category
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('agg-performance')">
+                        <span class="fav-icon" onclick="loadQuery('agg-performance')">★</span> 11. Average student
+                        performance
+                    </button>
+                    <button class="query-btn" onclick="loadQuery('agg-trends')">
+                        <span class="fav-icon" onclick="toggleFavorite(event, 'agg-trends')">★</span> 12. Enrollment
+                        trends over time
+                    </button>
+                </div>
+
+                <button class="query-btn reset-btn" onclick="resetDatabase()">⚠️ Reset Database</button>
+            </aside>
+
+            <!-- Editor & Output -->
+            <section class="editor-section">
+                <!-- Query History -->
+                <div class="history-panel" id="history-panel" style="display: none;">
+                    <div class="box-header">
+                        <div class="box-title">📜 Query History</div>
+                        <button class="icon-btn" onclick="clearHistory()">🗑️ Clear</button>
+                    </div>
+                    <div id="history-list"></div>
+                </div>
+
+                <!-- Editor -->
+                <div class="editor-box">
+                    <div class="box-header">
+                        <div class="box-title">⚡ MongoDB Query</div>
+                        <div class="box-actions">
+                            <button class="icon-btn" onclick="copyQuery()" title="Copy">📋</button>
+                            <button class="icon-btn" onclick="toggleHistory()" title="History">📜</button>
+                            <button class="icon-btn" onclick="toggleShortcuts()" title="Shortcuts">⌨️</button>
+                            <button class="execute-btn" onclick="executeQuery()">▶ Execute</button>
+                        </div>
+                    </div>
+                    <textarea id="query-editor" placeholder="// Select a query or write your own code..."></textarea>
+                </div>
+                <!-- Output -->
+                <div class="output-box">
+                    <div class="box-header">
+                        <div class="box-title">📊 Result</div>
+                        <div class="box-actions">
+                            <button class="icon-btn" onclick="exportResult()" title="Export JSON">💾</button>
+                            <button class="icon-btn" onclick="formatOutput()" title="Format">✨</button>
+                        </div>
+                    </div>
+                    <pre id="output">// Select and execute a query to see the results...</pre>
+                </div>
+            </section>
+        </div>
+    </div>
+    <script src="/js/background.js"></script>
+    <script>
+        // ====================================
+        // REALTIME STATS UPDATE
+        // ==================================== (Replaced particle system)
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+
+                animateValue('stat-courses', stats.courses);
+                animateValue('stat-students', stats.students);
+                animateValue('stat-enrollments', stats.enrollments);
+                animateValue('stat-instructors', stats.instructors);
+                animateValue('stat-categories', stats.categories);
+                animateValue('stat-reviews', stats.reviews);
+                animateValue('stat-payments', stats.payments);
+            }
+
+            catch (err) {
+                console.error('Stats update error:', err);
+            }
+        }
+
+        function animateValue(id, newValue) {
+            const element = document.getElementById(id);
+            if (!element) return;
+
+            const currentValue = parseInt(element.textContent) || 0;
+            if (currentValue === newValue) return;
+
+            const duration = 1000;
+            const steps = 30;
+            const stepValue = (newValue - currentValue) / steps;
+            let currentStep = 0;
+
+            const interval = setInterval(() => {
+                currentStep++;
+                const value = Math.round(currentValue + (stepValue * currentStep));
+                element.innerHTML = value + '<span class="stat-pulse"></span>';
+
+                if (currentStep >= steps) {
+                    clearInterval(interval);
+                    element.innerHTML = newValue + '<span class="stat-pulse"></span>';
+                }
+            }
+
+                , duration / steps);
+        }
+
+        setInterval(updateStats, 5000);
+
+        // ====================================
+        // CLICKABLE STATS - SHOW COLLECTION DATA
+        // ====================================
+        async function showCollectionData(collectionName) {
+            const modal = document.getElementById('data-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+
+            modalTitle.textContent = `Collection: ${collectionName}`;
+            modalBody.innerHTML = '<div style="text-align: center;"><div class="loading-spinner"></div> Loading...</div>';
+            modal.classList.add('active');
+
+            try {
+                const response = await fetch(`/api/collection/${collectionName}?limit=20`);
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    const table = document.createElement('table');
+                    table.className = 'data-table';
+
+                    // Create header - include ALL keys including _id
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    const keys = Object.keys(result.data[0]);
+
+                    keys.forEach(key => {
+                        const th = document.createElement('th');
+                        th.textContent = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+
+                    // Create body
+                    const tbody = document.createElement('tbody');
+
+                    result.data.forEach(row => {
+                        const tr = document.createElement('tr');
+
+                        keys.forEach(key => {
+                            const td = document.createElement('td');
+                            let value = row[key];
+
+                            // Format ObjectId
+                            if (value && value.$oid) {
+                                value = value.$oid.slice(-8);
+                            }
+
+                            // Format Date
+                            else if (value && value.$date) {
+                                value = new Date(value.$date).toLocaleDateString('en-US');
+                            }
+
+                            // Format objects
+                            else if (value && typeof value === 'object') {
+                                if (Array.isArray(value)) {
+                                    value = value.map(v => v && v.$oid ? v.$oid.slice(-8) : v).join(', ');
+                                }
+
+                                else {
+                                    value = JSON.stringify(value).slice(0, 50);
+                                }
+                            }
+
+                            // Format null/undefined
+                            else if (value === null || value === undefined) {
+                                value = '-';
+                            }
+
+                            // Format numbers
+                            else if (typeof value === 'number') {
+                                value = Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2);
+                            }
+
+                            td.textContent = String(value).slice(0, 100);
+                            td.title = String(row[key]); // Full value on hover
+                            tr.appendChild(td);
+                        });
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+
+                    modalBody.innerHTML = `<p style="margin-bottom: 1rem; color: var(--mongo-green);">📊 ${result.count} documents (sorted by date)</p>`;
+                    modalBody.appendChild(table);
+                }
+
+                else {
+                    modalBody.innerHTML = '<p style="text-align: center; opacity: 0.6;">No data available</p>';
+                }
+            }
+
+            catch (err) {
+                modalBody.innerHTML = `<p class="error">Error: ${err.message}</p>`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('data-modal').classList.remove('active');
+        }
+
+        // Close modal on outside click
+        document.getElementById('data-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'data-modal') {
+                closeModal();
+            }
+        });
+
+        // ====================================
+        // QUERY LAB FUNCTIONALITY
+        // ====================================
+        const editor = document.getElementById('query-editor');
+        const output = document.getElementById('output');
+
+        const queries = {
+            'crud-create': ` // A.1 - Add a new course
+
+            db.courses.insertOne({
+                title: "Advanced Machine Learning with Python",
+                description: "Master advanced ML algorithms and deep learning techniques",
+                price: 149.99,
+                duration_hours: 45.5,
+                created_at: new Date(),
+                tags: ["machine-learning", "python", "AI"],
+                rating: 0
+            })`,
+            'crud-read': ` // A.2 - Find all courses in a category
+
+        db.courses.find({
+            category_id: ObjectId("...")
+        }
+
+        ,
+        {
+        title: 1, price: 1, rating: 1
+        }).limit(5)`,
+            'crud-update': ` // A.3 - Update course price
+
+        db.courses.updateOne({
+            _id: ObjectId("...")
+        }
+
+        ,
+        {
+        $set: {
+            price: 99.99
+        }
+        })`,
+            'crud-delete': ` // A.4 - Delete inactive students
+
+        db.students.deleteMany({
+            status: "inactive"
+        })`,
+            'advanced-top': ` // B.1 - Find top 5 highest rated courses
+
+        db.courses.find({}
+
+        , {
+        title: 1, rating: 1, price: 1
+
+        }) .sort({
+            rating: -1
+        }) .limit(5)`,
+            'advanced-country': ` // B.2 - List students by country
+
+        db.students.aggregate([ {
+                $group: {
+
+                    _id: "$country",
+                    count: {
+                        $sum: 1
+                    }
+
+                    ,
+                    students: {
+                        $push: {
+                            name: "$name", email: "$email"
+                        }
+                    }
+                }
+            }
+
+            ,
+            {
+            $sort: {
+                count: -1
+            }
+        }
+
+        ,
+        {
+        $limit: 10
+        }
+
+        ])`,
+            'advanced-status': ` // B.3 - Count enrollments by status
+
+        db.enrollments.aggregate([ {
+                $group: {
+
+                    _id: "$status",
+                    count: {
+                        $sum: 1
+                    }
+
+                    ,
+                    avg_progress: {
+                        $avg: "$progress_percent"
+                    }
+                }
+            }
+
+            ,
+            {
+            $sort: {
+                count: -1
+            }
+        }
+
+        ])`,
+            'advanced-revenue': ` // B.4 - Calculate total revenue
+
+        db.payments.aggregate([ {
+                $group: {
+
+                    _id: null,
+                    total_revenue: {
+                        $sum: "$amount"
+                    }
+
+                    ,
+                    total_transactions: {
+                        $sum: 1
+                    }
+
+                    ,
+                    avg_transaction: {
+                        $avg: "$amount"
+                    }
+                }
+            }
+
+            ])`,
+            'agg-join': ` // C.1 - Course-enrollment-student join
+
+        db.enrollments.aggregate([ {
+                $lookup: {
+                    from: "students", localField: "student_id", foreignField: "_id", as: "student"
+                }
+            }
+
+            ,
+            {
+            $unwind: "$student"
+        }
+
+        ,
+        {
+        $lookup: {
+            from: "courses", localField: "course_id", foreignField: "_id", as: "course"
+        }
+        }
+
+        ,
+        {
+        $unwind: "$course"
+        }
+
+        ,
+        {
+        $lookup: {
+            from: "instructors",
+            localField: "course.instructor_id",
+            foreignField: "_id",
+            as: "instructor"
+        }
+        }
+
+        ,
+        {
+        $unwind: "$instructor"
+        }
+
+        ,
+        {
+        $project: {
+            student_name: "$student.name",
+            course_title: "$course.title",
+            instructor_name: "$instructor.name",
+            progress: "$progress_percent",
+            status: "$status"
+        }
+        }
+
+        ,
+        {
+        $limit: 20
+        }
+
+        ])`,
+            'agg-category': ` // C.2 - Statistics by course category
+
+        db.courses.aggregate([ {
+                $lookup: {
+                    from: "categories", localField: "category_id", foreignField: "_id", as: "category"
+                }
+            }
+
+            ,
+            {
+            $unwind: "$category"
+        }
+
+        ,
+        {
+        $lookup: {
+            from: "enrollments", localField: "_id", foreignField: "course_id", as: "enrollments"
+        }
+        }
+
+        ,
+        {
+        $lookup: {
+            from: "payments", localField: "_id", foreignField: "course_id", as: "payments"
+        }
+        }
+
+        ,
+        {
+        $group: {
+
+            _id: "$category.name",
+            total_courses: {
+                $sum: 1
+            }
+
+            ,
+            avg_price: {
+                $avg: "$price"
+            }
+
+            ,
+            avg_rating: {
+                $avg: "$rating"
+            }
+
+            ,
+            total_enrollments: {
+                $sum: {
+                    $size: "$enrollments"
+                }
+            }
+
+            ,
+            total_revenue: {
+                $sum: {
+                    $sum: "$payments.amount"
+                }
+            }
+        }
+        }
+
+        ,
+        {
+        $sort: {
+            total_revenue: -1
+        }
+        }
+
+        ])`,
+            'agg-performance': ` // C.3 - Performance moyenne des étudiants
+
+        db.enrollments.aggregate([ {
+                $match: {
+                    status: "completed", final_grade: {
+                        $ne: null
+                    }
+                }
+            }
+
+            ,
+            {
+            $lookup: {
+                from: "students", localField: "student_id", foreignField: "_id", as: "student"
+            }
+        }
+
+        ,
+        {
+        $unwind: "$student"
+        }
+
+        ,
+        {
+        $group: {
+
+            _id: "$student_id",
+            student_name: {
+                $first: "$student.name"
+            }
+
+            ,
+            country: {
+                $first: "$student.country"
+            }
+
+            ,
+            courses_completed: {
+                $sum: 1
+            }
+
+            ,
+            avg_grade: {
+                $avg: "$final_grade"
+            }
+
+            ,
+            min_grade: {
+                $min: "$final_grade"
+            }
+
+            ,
+            max_grade: {
+                $max: "$final_grade"
+            }
+        }
+        }
+
+        ,
+        {
+        $sort: {
+            avg_grade: -1
+        }
+        }
+
+        ,
+        {
+        $limit: 20
+        }
+
+        ])`,
+            'agg-trends': ` // C.4 - Évolution des inscriptions dans le temps
+
+        db.enrollments.aggregate([ {
+                $project: {
+                    year_month: {
+                        $dateToString: {
+                            format: "%Y-%m", date: "$enrolled_at"
+                        }
+                    }
+
+                    ,
+                    status: 1
+                }
+            }
+
+            ,
+            {
+            $group: {
+
+                _id: "$year_month",
+                total: {
+                    $sum: 1
+                }
+
+                ,
+                completed: {
+                    $sum: {
+                        $cond: [ {
+                            $eq: ["$status", "completed"]
+                        }
+
+                        , 1, 0]
+                    }
+                }
+
+                ,
+                in_progress: {
+                    $sum: {
+                        $cond: [ {
+                            $eq: ["$status", "in_progress"]
+                        }
+
+                        , 1, 0]
+                    }
+                }
+
+                ,
+                dropped: {
+                    $sum: {
+                        $cond: [ {
+                            $eq: ["$status", "dropped"]
+                        }
+
+                        , 1, 0]
+                    }
+                }
+            }
+        }
+
+        ,
+        {
+        $sort: {
+            _id: 1
+        }
+        }
+
+        ])`
+        }
+
+            ;
+
+        const serverQueryMap = {
+            'crud-create': 'crud-create',
+            'crud-read': 'crud-read',
+            'crud-update': 'crud-update',
+            'crud-delete': 'crud-delete',
+            'advanced-top': 'advanced-top-courses',
+            'advanced-country': 'advanced-students-country',
+            'advanced-status': 'advanced-enrollment-status',
+            'advanced-revenue': 'advanced-revenue',
+            'agg-join': 'agg-course-join',
+            'agg-category': 'agg-category-stats',
+            'agg-performance': 'agg-student-performance',
+            'agg-trends': 'agg-enrollment-trends'
+        }
+
+            ;
+
+        let currentQueryId = null;
+        let queryHistory = JSON.parse(localStorage.getItem('queryHistory') || '[]');
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        let lastResult = null;
+
+        // Load favorites on page load
+        favorites.forEach(id => {
+            const btn = document.querySelector(`[onclick*="${id}"]`);
+            if (btn) btn.classList.add('favorited');
+        });
+
+        function loadQuery(id) {
+            document.querySelectorAll('.query-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            currentQueryId = id;
+            editor.value = queries[id];
+            output.innerHTML = '<span class="success">// Requête chargée. Appuyez sur Ctrl+Enter ou cliquez sur "Exécuter".</span>';
+
+            // Highlight syntax
+            highlightEditor();
+        }
+
+        async function executeQuery() {
+            const queryText = editor.value.trim();
+
+            if (!queryText) {
+                output.innerHTML = '<span class="error">// Veuillez écrire ou sélectionner une requête.</span>';
+                return;
+            }
+
+            output.innerHTML = '<span class="success">// <div class="loading-spinner"></div> Exécution en cours...</span>';
+
+            // Add to history
+            addToHistory(currentQueryId || 'custom', queryText);
+
+            try {
+                // Extract the actual MongoDB query (remove comments)
+                const lines = queryText.split('\n').filter(line => !line.trim().startsWith('//'));
+                const cleanQuery = lines.join('\n').trim();
+
+                const response = await fetch('/api/execute-raw-query', {
+
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+
+                    ,
+                    body: JSON.stringify({
+                        query: cleanQuery
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    lastResult = data.result;
+                    const formatted = JSON.stringify(data.result, null, 2);
+                    output.innerHTML = `<span class="success"> // ✓ SUCCÈS</span>\n\n${formatted}`;
+
+                    // Apply syntax highlighting
+                    hljs.highlightElement(output);
+
+                    setTimeout(updateStats, 500);
+                }
+
+                else {
+                    output.innerHTML = `<span class="error"> // ✗ ERREUR</span>\n\n${data.error}`;
+                }
+            }
+
+            catch (e) {
+                output.innerHTML = `<span class="error"> // ✗ ERREUR RÉSEAU</span>\n\n${e.message}`;
+            }
+        }
+
+        async function resetDatabase() {
+            if (!confirm("Réinitialiser toutes les données ?")) return;
+
+            output.innerHTML = '<span class="success">// Réinitialisation en cours...</span>';
+
+            try {
+                const res = await fetch('/api/reset-database', {
+                    method: 'POST'
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    output.innerHTML = '<span class="success">// ✓ Base réinitialisée avec succès!</span>';
+                    setTimeout(updateStats, 1000);
+                }
+
+                else {
+                    output.innerHTML = `<span class="error"> // ✗ Erreur: ${data.error}</span>`;
+                }
+            }
+
+            catch (e) {
+                output.innerHTML = '<span class="error">// ✗ Erreur réseau</span>';
+            }
+        }
+
+        // ====================================
+        // ADDITIONAL FEATURES
+        // ====================================
+
+        // Query History
+        function addToHistory(queryId, queryText) {
+            const historyItem = {
+                id: queryId,
+                text: queryText.substring(0, 100),
+                timestamp: new Date().toISOString()
+            }
+
+                ;
+            queryHistory.unshift(historyItem);
+            queryHistory = queryHistory.slice(0, 20); // Keep last 20
+            localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+            updateHistoryDisplay();
+        }
+
+        function toggleHistory() {
+            const panel = document.getElementById('history-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+
+            if (panel.style.display === 'block') {
+                updateHistoryDisplay();
+            }
+        }
+
+        function updateHistoryDisplay() {
+            const list = document.getElementById('history-list');
+
+            if (queryHistory.length === 0) {
+                list.innerHTML = '<p style="opacity: 0.5; text-align: center;">Aucun historique</p>';
+                return;
+            }
+
+            list.innerHTML = queryHistory.map(item => `
+                <div class="history-item" onclick="loadHistoryItem('${item.id}')">
+                    <div>${item.text}...</div>
+                    <div class="history-time">${new Date(item.timestamp).toLocaleString('fr-FR')}</div>
+                </div>
+            `).join('');
+        }
+
+        function loadHistoryItem(queryId) {
+            if (queries[queryId]) {
+                loadQuery(queryId);
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('Effacer tout l\'historique ?')) {
+                queryHistory = [];
+                localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+                updateHistoryDisplay();
+            }
+        }
+
+        // Favorites
+        function toggleFavorite(event, queryId) {
+            event.stopPropagation();
+            const btn = event.target.closest('.query-btn');
+
+            if (favorites.includes(queryId)) {
+                favorites = favorites.filter(id => id !== queryId);
+                btn.classList.remove('favorited');
+            }
+
+            else {
+                favorites.push(queryId);
+                btn.classList.add('favorited');
+            }
+
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+        }
+
+        // Copy Query
+        function copyQuery() {
+            navigator.clipboard.writeText(editor.value);
+            alert('Requête copiée !');
+        }
+
+        // Export Result
+        function exportResult() {
+            if (!lastResult) {
+                alert('Aucun résultat à exporter');
+                return;
+            }
+
+            const blob = new Blob([JSON.stringify(lastResult, null, 2)], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            a.download = `query-result-${Date.now()}.json`;
+            a.click();
+        }
+
+        // Format Output
+        function formatOutput() {
+            try {
+                const formatted = output.textContent.substring(output.textContent.indexOf('\n\n') + 2);
+                const parsed = JSON.parse(formatted);
+                output.innerHTML = `<span class="success"> // ✓ FORMATTÉ</span>\n\n${JSON.stringify(parsed, null, 2)}`;
+                hljs.highlightElement(output);
+            }
+
+            catch (e) {
+                // Already formatted or not JSON
+            }
+        }
+
+        // Syntax Highlighting
+        function highlightEditor() {
+            // Simple syntax highlighting for editor
+            // Full highlighting happens on output
+        }
+
+        // Keyboard Shortcuts
+        function toggleShortcuts() {
+            const panel = document.getElementById('shortcuts-panel');
+            panel.classList.toggle('visible');
+        }
+
+        document.addEventListener('keydown', (e) => {
+
+            // Ctrl+Enter: Execute
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                executeQuery();
+            }
+
+            // Ctrl+R: Reset (prevent page reload)
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                resetDatabase();
+            }
+
+            // ?: Toggle shortcuts
+            if (e.key === '?' && !e.ctrlKey && !e.altKey && document.activeElement !== editor) {
+                toggleShortcuts();
+            }
+
+            // Escape: Close modal/panels
+            if (e.key === 'Escape') {
+                closeModal();
+                document.getElementById('shortcuts-panel').classList.remove('visible');
+            }
+        });
+
+        // Auto-hide shortcuts after 3 seconds
+        let shortcutsTimeout;
+
+        document.getElementById('shortcuts-panel').addEventListener('mouseenter', () => {
+            clearTimeout(shortcutsTimeout);
+        });
+
+        document.getElementById('shortcuts-panel').addEventListener('mouseleave', () => {
+            shortcutsTimeout = setTimeout(() => {
+                document.getElementById('shortcuts-panel').classList.remove('visible');
+            }
+
+                , 3000);
+        });
+    </script>
+</body>
+
+</html>

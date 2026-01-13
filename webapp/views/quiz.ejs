@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Master Quiz · Bida Platform</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        :root {
+            --mongo-green: #00ed64;
+            --mongo-dark: #001e2b;
+            --bg-dark: #020617;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .quiz-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- Quiz Card --- */
+        .quiz-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--mongo-green), var(--accent-blue));
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* --- Typography --- */
+        .step-indicator {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--mongo-green);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        h2#question-text {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 2.5rem;
+            color: #fff;
+        }
+
+        /* --- Options --- */
+        .options-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .option {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .option:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(8px);
+        }
+
+        .option.correct {
+            border-color: var(--mongo-green);
+            background: rgba(0, 237, 100, 0.1);
+            color: #fff;
+        }
+
+        .option.wrong {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .option-marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .option:hover .option-marker {
+            border-color: var(--mongo-green);
+            color: var(--mongo-green);
+        }
+
+        /* --- Results --- */
+        #results {
+            display: none;
+            text-align: center;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 8px solid var(--mongo-green);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            box-shadow: 0 0 30px rgba(0, 237, 100, 0.2);
+        }
+
+        .score-val {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            text-transform: uppercase;
+        }
+
+        .rank-badge {
+            background: linear-gradient(135deg, var(--mongo-green), var(--accent-blue));
+            color: #000;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+
+        .btn-restart {
+            background: transparent;
+            border: 1px solid var(--mongo-green);
+            color: var(--mongo-green);
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-restart:hover {
+            background: var(--mongo-green);
+            color: #000;
+        }
+
+        .home-link {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .home-link:hover {
+            color: #fff;
+            border-color: var(--mongo-green);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Unified Background -->
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <a href="/" class="home-link">← Query Lab</a>
+
+    <div class="quiz-container">
+        <div class="quiz-card animate__animated animate__fadeInUp" id="quiz-ui">
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+
+            <div id="quiz-flow">
+                <span class="step-indicator" id="step-count">Question 1 of 10</span>
+                <h2 id="question-text">Loading question...</h2>
+
+                <div class="options-grid" id="options-container">
+                    <!-- Options injected here -->
+                </div>
+            </div>
+
+            <div id="results" class="animate__animated">
+                <div class="score-circle">
+                    <div class="score-val" id="final-score">0</div>
+                    <div class="score-label">Points</div>
+                </div>
+                <h2 id="result-message" style="margin-bottom: 0.5rem">Mastery Achieved!</h2>
+                <div class="rank-badge" id="rank-badge">NoSQL Novice</div>
+                <p id="result-desc" style="margin-bottom: 2.5rem; color: var(--text-secondary)">You've completed the
+                    challenge. Time to dive deeper into the documentation.</p>
+                <button class="btn-restart" onclick="location.reload()">Retry Challenge</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Full question bank - 25+ questions for variety
+        const allQuestions = [
+            // Original 10 questions
+            {
+                q: "What is the primary advantage of a 'NoSQL' database like MongoDB?",
+                o: ["Strict predefined schemas", "Horizontal scalability & flexible data models", "Only supports numeric data", "Requires SQL for all queries"],
+                a: 1
+            },
+            {
+                q: "What is the core data format used by MongoDB to store documents?",
+                o: ["XML", "BSON (Binary JSON)", "YAML", "Plain Text"],
+                a: 1
+            },
+            {
+                q: "Which MongoDB feature allows you to distribute data across multiple machines?",
+                o: ["Aggregation", "Sharding", "Indexing", "Journaling"],
+                a: 1
+            },
+            {
+                q: "In MongoDB, what is a primary benefit of 'Embedding' related data in a single document?",
+                o: ["Reduces data size", "Avoids expensive joins and improves read performance", "Makes data harder to find", "Requires more collections"],
+                a: 1
+            },
+            {
+                q: "What does 'Flexible Schema' mean in the context of MongoDB?",
+                o: ["Documents in the same collection can have different fields", "The database doesn't store data", "You cannot use indexes", "You must define all fields before inserting"],
+                a: 0
+            },
+            {
+                q: "Which index type is default in MongoDB for high-performance lookups?",
+                o: ["Hash Index", "B-Tree Index", "Text Index", "Geospatial Index"],
+                a: 1
+            },
+            {
+                q: "What is a 'Replica Set' primarily used for in MongoDB?",
+                o: ["Writing code", "High Availability and Data Redundancy", "Generating JSON", "Sorting data"],
+                a: 1
+            },
+            {
+                q: "Does MongoDB support ACID transactions?",
+                o: ["No, never", "Yes, including multi-document transactions since v4.0", "Only for single fields", "Only in the cloud"],
+                a: 1
+            },
+            {
+                q: "What is the purpose of the MongoDB Aggregation Framework?",
+                o: ["To delete data", "To process and transform data through a pipeline", "To create backups", "To design UI"],
+                a: 1
+            },
+            {
+                q: "Which theorem describes the trade-offs between Consistency, Availability, and Partition Tolerance in distributed systems?",
+                o: ["Pythagorean Theorem", "CAP Theorem", "Newton's Law", "Moore's Law"],
+                a: 1
+            },
+            // New additional questions
+            {
+                q: "What command is used to insert a single document in MongoDB?",
+                o: ["db.collection.add()", "db.collection.insertOne()", "db.collection.create()", "db.collection.push()"],
+                a: 1
+            },
+            {
+                q: "Which operator is used to update a field value in MongoDB?",
+                o: ["$modify", "$change", "$set", "$update"],
+                a: 2
+            },
+            {
+                q: "What is the maximum document size in MongoDB?",
+                o: ["4 MB", "16 MB", "64 MB", "Unlimited"],
+                a: 1
+            },
+            {
+                q: "Which aggregation stage is used to filter documents?",
+                o: ["$project", "$match", "$group", "$sort"],
+                a: 1
+            },
+            {
+                q: "What does the $lookup stage do in aggregation?",
+                o: ["Searches for text", "Performs a left outer join", "Creates an index", "Deletes duplicates"],
+                a: 1
+            },
+            {
+                q: "Which method is used to create an index in MongoDB?",
+                o: ["db.collection.addIndex()", "db.collection.createIndex()", "db.collection.index()", "db.collection.newIndex()"],
+                a: 1
+            },
+            {
+                q: "What is the purpose of the _id field in MongoDB?",
+                o: ["It's optional metadata", "It's a unique identifier for each document", "It stores the collection name", "It tracks query performance"],
+                a: 1
+            },
+            {
+                q: "Which command shows all databases in MongoDB?",
+                o: ["show databases", "list dbs", "db.showAll()", "mongo.databases()"],
+                a: 0
+            },
+            {
+                q: "What is MongoDB Atlas?",
+                o: ["A local IDE", "A fully managed cloud database service", "A JavaScript library", "A backup tool"],
+                a: 1
+            },
+            {
+                q: "Which operator is used to remove a field from a document?",
+                o: ["$delete", "$remove", "$unset", "$drop"],
+                a: 2
+            },
+            {
+                q: "What does the $group stage do in aggregation?",
+                o: ["Filters documents", "Groups documents by a key and applies accumulators", "Sorts documents", "Joins collections"],
+                a: 1
+            },
+            {
+                q: "Which method returns the number of documents in a collection?",
+                o: ["db.collection.size()", "db.collection.length()", "db.collection.countDocuments()", "db.collection.total()"],
+                a: 2
+            },
+            {
+                q: "What is the purpose of a compound index?",
+                o: ["To index multiple collections", "To index multiple fields in a single index", "To compress data", "To encrypt fields"],
+                a: 1
+            },
+            {
+                q: "Which method is used to delete multiple documents?",
+                o: ["db.collection.removeAll()", "db.collection.deleteMany()", "db.collection.drop()", "db.collection.clear()"],
+                a: 1
+            },
+            {
+                q: "What does the $inc operator do?",
+                o: ["Inserts a new document", "Increments a numeric field value", "Includes a field in results", "Creates an index"],
+                a: 1
+            },
+            {
+                q: "Which command switches to a database (creates if not exists)?",
+                o: ["select database", "open db", "use <database>", "switch <database>"],
+                a: 2
+            },
+            {
+                q: "What is a capped collection in MongoDB?",
+                o: ["A collection with a maximum number of indexes", "A fixed-size collection that overwrites old data", "An encrypted collection", "A read-only collection"],
+                a: 1
+            },
+            {
+                q: "Which operator performs a logical AND on an array of conditions?",
+                o: ["$all", "$and", "$both", "$combine"],
+                a: 1
+            },
+            {
+                q: "What is the WiredTiger in MongoDB?",
+                o: ["A query language", "The default storage engine", "A visualization tool", "A backup service"],
+                a: 1
+            },
+            {
+                q: "Which method is used to update multiple documents?",
+                o: ["db.collection.updateAll()", "db.collection.modifyMany()", "db.collection.updateMany()", "db.collection.changeAll()"],
+                a: 2
+            }
+        ];
+
+        // Shuffle function using Fisher-Yates algorithm
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Select 10 random questions for this quiz session
+        const questions = shuffleArray(allQuestions).slice(0, 10);
+
+        let currentQuestion = 0;
+        let score = 0;
+        let canAnswer = true;
+
+        const qText = document.getElementById('question-text');
+        const optionsEl = document.getElementById('options-container');
+        const stepEl = document.getElementById('step-count');
+        const progressEl = document.getElementById('progress-fill');
+
+        function loadQuestion() {
+            canAnswer = true;
+            const q = questions[currentQuestion];
+            qText.innerText = q.q;
+            stepEl.innerText = `Question ${currentQuestion + 1} of ${questions.length}`;
+            progressEl.style.width = `${(currentQuestion / questions.length) * 100}%`;
+
+            // Also shuffle the options for each question (keeping track of correct answer)
+            const correctAnswer = q.o[q.a];
+            const shuffledOptions = shuffleArray(q.o);
+            const newCorrectIndex = shuffledOptions.indexOf(correctAnswer);
+
+            optionsEl.innerHTML = '';
+            shuffledOptions.forEach((opt, idx) => {
+                const btn = document.createElement('div');
+                btn.className = 'option animate__animated animate__fadeIn';
+                btn.style.animationDelay = `${idx * 0.1}s`;
+                btn.innerHTML = `<div class="option-marker">${String.fromCharCode(65 + idx)}</div><span>${opt}</span>`;
+                btn.onclick = () => selectOption(idx, btn, newCorrectIndex);
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        function selectOption(idx, element, correctIdx) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            if (idx === correctIdx) {
+                element.classList.add('correct');
+                score += 10;
+            } else {
+                element.classList.add('wrong');
+                optionsEl.children[correctIdx].classList.add('correct');
+            }
+
+            setTimeout(() => {
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
+                    loadQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1200);
+        }
+
+        function showResults() {
+            progressEl.style.width = '100%';
+            document.getElementById('quiz-flow').style.display = 'none';
+            const resultsEl = document.getElementById('results');
+            resultsEl.style.display = 'block';
+            resultsEl.classList.add('animate__zoomIn');
+
+            document.getElementById('final-score').innerText = score;
+
+            const badge = document.getElementById('rank-badge');
+            const desc = document.getElementById('result-desc');
+
+            if (score >= 90) {
+                badge.innerText = "WiredTiger Wizard";
+                desc.innerText = "Immaculate! You have a profound understanding of MongoDB architecture and distributed systems.";
+            } else if (score >= 70) {
+                badge.innerText = "Query Master";
+                desc.innerText = "Excellent performance. You've mastered the core concepts of NoSQL engineering.";
+            } else if (score >= 40) {
+                badge.innerText = "BSON Builder";
+                desc.innerText = "Good effort. A little more time with the 'Deep Architecture' guide and you'll be a Master.";
+            } else {
+                badge.innerText = "NoSQL Novice";
+                desc.innerText = "You're at the start of your journey. Re-read the Bida Guide to build a stronger foundation.";
+            }
+        }
+
+        loadQuestion();
+    </script>
+    <script src="/js/background.js"></script>
+</body>
+
+</html>

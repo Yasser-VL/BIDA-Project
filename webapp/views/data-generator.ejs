@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Generator Architecture · Bida Platform</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="stylesheet" href="/css/theme.css">
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: true,
+                primaryColor: 'rgba(0, 237, 100, 0.1)',
+                primaryTextColor: '#00ED64',
+                primaryBorderColor: '#00ED64',
+                lineColor: '#3B82F6',
+                secondaryColor: '#001E2B',
+                tertiaryColor: '#1C2D38'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --mongo-green: #00ed64;
+            --mongo-dark: #001e2b;
+            --bg-dark: #020617;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --code-bg: #0d1117;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-primary);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1.5rem 8rem;
+        }
+
+        /* --- Header --- */
+        .doc-header {
+            text-align: center;
+            padding: 8rem 1rem 5rem;
+            position: relative;
+        }
+
+        .doc-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--mongo-green), transparent);
+        }
+
+        .badge {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--mongo-green);
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.6rem 1.2rem;
+            border: 1px solid rgba(0, 237, 100, 0.2);
+            border-radius: 50px;
+            background: rgba(0, 237, 100, 0.05);
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+
+        .doc-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .doc-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* --- Glass Cards --- */
+        .section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 4rem;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            backdrop-filter: blur(12px);
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        h2::before {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: var(--mongo-green);
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: #fff;
+            margin: 2rem 0 1rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            color: #cbd5e1;
+        }
+
+        .code-block {
+            background: #0d1117;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            color: #e6edf3;
+        }
+
+        /* Mermaid Wrapper */
+        .mermaid-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* --- Home Button --- */
+        .home-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            text-decoration: none;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            font-size: 0.9rem;
+            z-index: 200;
+            transition: all 0.2s;
+        }
+
+        .home-btn:hover {
+            color: #fff;
+            border-color: var(--mongo-green);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .feature-item strong {
+            color: var(--mongo-green);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Syntax colors */
+        .k {
+            color: #ff7b72;
+        }
+
+        .s {
+            color: #a5d6ff;
+        }
+
+        .f {
+            color: #d2a8ff;
+        }
+
+        .c {
+            color: #8b949e;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Unified Background -->
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <a href="/" class="home-btn">← Query Lab</a>
+
+    <div class="container animate__animated animate__fadeIn">
+
+        <header class="doc-header">
+            <div class="badge">Architecture Guide</div>
+            <h1 class="doc-title">Data Generation Engine</h1>
+            <p class="doc-subtitle">Inside the `generate_data.py` logic: How we seed the Bida Platform with realistic,
+                interconnected educational datasets.</p>
+        </header>
+
+        <section class="section">
+            <div class="card">
+                <h2>1. Core Objectives</h2>
+                <p>The <code>generate_data.py</code> script is responsible for building a production-grade synthetic
+                    environment. Its goals are:</p>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <strong>Relational Integrity</strong>
+                        Maintaining strict Foreign Key-like links using MongoDB ObjectIds.
+                    </div>
+                    <div class="feature-item">
+                        <strong>BSON Compliance</strong>
+                        Exporting data in Extended JSON format for seamless MongoDB importing.
+                    </div>
+                    <div class="feature-item">
+                        <strong>Realistic Entropy</strong>
+                        Applying weighted probability for student enrollment statuses and grades.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="card">
+                <h2>2. Data Workflow</h2>
+                <p>The generation process follows a linear dependency chain to ensure that every Course has a Category,
+                    and every Enrollment has both a Student and a Course.</p>
+
+                <div class="mermaid-card">
+                    <div class="mermaid">
+                        graph TD
+                        A[Start] --> B(Categories)
+                        B --> C(Instructors)
+                        C --> D(Students)
+                        B & C --> E(Courses)
+                        D & E --> F(Enrollments)
+                        D & E --> G(Reviews)
+                        D & E --> H(Payments)
+                        F & G & H --> I[Export to Extended JSON]
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="card">
+                <h2>3. Key Technologies</h2>
+                <ul style="list-style: none;">
+                    <li><strong>• Pymongo (json_util):</strong> Used to handle MongoDB-specific types
+                        (<code>$oid</code>, <code>$date</code>) during serialization.</li>
+                    <li><strong>• BSON:</strong> Native <code>ObjectId()</code> generation for realistic identifier
+                        entropy.</li>
+                    <li><strong>• Randomization:</strong> Weighted choice distributions for 'status' fields (92% Active,
+                        8% Inactive).</li>
+                </ul>
+
+                <h3>Implementation Snippet: ObjectId Generation</h3>
+                <div class="code-block">
+                    <span class="c"># Realistic ID linking strategy</span>
+                    <span class="k">from</span> bson <span class="k">import</span> ObjectId, json_util
+
+                    <span class="k">def</span> <span class="f">generate_student</span>():
+                    <span class="k">return</span> {
+                    <span class="s">"_id"</span>: <span class="f">ObjectId</span>(), <span class="c"># Binary
+                        GUID</span>
+                    <span class="s">"name"</span>: <span class="s">"Faker Name"</span>,
+                    <span class="s">"status"</span>: <span class="s">"active"</span>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="card">
+                <h2>4. The Relational Model</h2>
+                <p>Unlike standard Flat-JSON generation, the Bida Generator maintains a graph of dependencies:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <strong>Courses</strong>
+                        <p style="font-size:0.85rem">Stores <code>category_id</code> and <code>instructor_id</code>.</p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>Enrollments</strong>
+                        <p style="font-size:0.85rem">Junction document mapping <code>student_id</code> to
+                            <code>course_id</code>.
+                        </p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>Analytics</strong>
+                        <p style="font-size:0.85rem">Calculates <code>final_grade</code> based on
+                            <code>status="completed"</code>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="info-box tip"
+                    style="padding: 1.5rem; border-left: 4px solid var(--mongo-green); background: rgba(0, 237, 100, 0.05); border-radius: 8px;">
+                    <strong>Design Choice: Extended JSON</strong>
+                    <br>Standard JSON doesn't support Dates or ObjectIds. The script exports using
+                    <code>json_util.dumps()</code> to ensure <code>{"$oid": "..."}</code> wrappers are present, allowing
+                    <code>mongoimport</code> to recognize binary types.
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="card" style="border-left: 4px solid var(--accent-blue)">
+                <h2>5. Scale Parameters</h2>
+                <p>The current simulator configuration generates:</p>
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <ul style="list-style: none; color: var(--text-secondary);">
+                            <li>• Students: <strong>500</strong></li>
+                            <li>• Courses: <strong>80</strong></li>
+                            <li>• Instructors: <strong>15</strong></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <ul style="list-style: none; color: var(--text-secondary);">
+                            <li>• Enrollments: <strong>1,400</strong></li>
+                            <li>• Reviews: <strong>900</strong></li>
+                            <li>• Payments: <strong>1,200</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+    <script src="/js/background.js"></script>
+</body>
+
+</html>

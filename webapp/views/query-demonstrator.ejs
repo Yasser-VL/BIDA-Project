@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Query Lab - Interactive Demonstrator</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <style>
+        /* Enhanced Modern Design */
+        .hero-section {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .control-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .query-editor {
+            background: #1e1e2e;
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin: var(--spacing-md) 0;
+            position: relative;
+        }
+
+        .query-editor textarea {
+            width: 100%;
+            min-height: 200px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+            padding: var(--spacing-sm);
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .editor-toolbar button {
+            padding: 0.5rem 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-size: 0.875rem;
+        }
+
+        .editor-toolbar button:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .query-card-modern {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .query-card-modern::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .query-card-modern:hover::after {
+            transform: scaleX(1);
+        }
+
+        .query-card-modern:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            border-color: rgba(102, 126, 234, 0.4);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.active {
+            background: #00f2fe;
+            box-shadow: 0 0 10px #00f2fe;
+        }
+
+        .reset-warning {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(238, 90, 111, 0.1) 100%);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-top: var(--spacing-sm);
+            display: none;
+        }
+
+        .reset-warning.show {
+            display: block;
+            animation: fadeInUp 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">⚡ MongoDB Query Lab</div>
+            <div class="status-indicator">
+                <span class="status-dot active"></span>
+                <span>Connected to Bida</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div style="position: relative; z-index: 1;">
+                <div class="hero-badge">✨ Interactive MongoDB Query Executor</div>
+                <h1 class="hero-title">🔬 MongoDB Query Laboratory</h1>
+                <p class="page-subtitle">
+                    Edit, execute, and visualize MongoDB queries in real-time.<br>
+                    Modify queries, see results instantly, and reset data anytime.
+                </p>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div>
+                <h3 style="margin: 0; color: var(--text-primary);">Database Statistics</h3>
+                <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.875rem;">
+                    <%= stats.courses %> courses • <%= stats.students %> students • <%= stats.enrollments %> enrollments
+                </p>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-danger" onclick="showResetWarning()">
+                    🔄 Reset All Data
+                </button>
+                <button class="btn btn-outline" onclick="location.reload()">
+                    ♻️ Refresh Page
+                </button>
+            </div>
+        </div>
+
+        <!-- Reset Warning -->
+        <div class="reset-warning" id="resetWarning">
+            <h3 style="color: var(--danger); margin-bottom: var(--spacing-sm);">⚠️ Warning: Data Reset</h3>
+            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                This will delete all data and reimport the original dataset. All changes will be lost.
+            </p>
+            <div class="btn-group">
+                <button class="btn btn-danger" onclick="resetDatabase()">
+                    ✅ Yes, Reset Database
+                </button>
+                <button class="btn btn-outline" onclick="hideResetWarning()">
+                    ❌ Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-icon-wrapper">
+                    <div class="stat-icon">📚</div>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">
+                        <%= stats.courses %>
+                    </div>
+                    <div class="stat-label">Courses</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-card-secondary">
+                <div class="stat-icon-wrapper">
+                    <div class="stat-icon">👥</div>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">
+                        <%= stats.students %>
+                    </div>
+                    <div class="stat-label">Students</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-card-success">
+                <div class="stat-icon-wrapper">
+                    <div class="stat-icon">✅</div>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">
+                        <%= stats.enrollments %>
+                    </div>
+                    <div class="stat-label">Enrollments</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-card-warning">
+                <div class="stat-icon-wrapper">
+                    <div class="stat-icon">💰</div>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">
+                        <%= stats.payments %>
+                    </div>
+                    <div class="stat-label">Payments</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Sections -->
+        <div class="query-categories">
+            <!-- CRUD Operations -->
+            <div class="query-section">
+                <div class="section-header">
+                    <div>
+                        <h2>🔧 A. CRUD Operations</h2>
+                        <p class="section-subtitle">Create, Read, Update, Delete - Edit and execute</p>
+                    </div>
+                </div>
+
+                <div class="query-grid">
+                    <!-- CREATE -->
+                    <div class="query-card-modern">
+                        <div class="query-header">
+                            <div class="query-number">1</div>
+                            <h3>Create - Add New Course</h3>
+                        </div>
+                        <div class="query-description">
+                            Insert a new course document. Edit the values below before executing.
+                        </div>
+
+                        <div class="query-editor">
+                            <div class="editor-toolbar">
+                                <button onclick="resetQuery('crud-create')">↺ Reset</button>
+                                <button onclick="formatQuery('crud-create')">✨ Format</button>
+                            </div>
+                            <textarea id="query-crud-create" spellcheck="false">db.courses.insertOne({
+  title: "Advanced Machine Learning",
+  description: "Master ML algorithms and deep learning",
+  price: 149.99,
+  duration_hours: 45.5,
+  tags: ["ML", "Python", "AI"],
+  rating: 0
+})</textarea>
+                        </div>
+
+                        <button class="btn btn-primary execute-btn" onclick="executeCustomQuery('crud-create')">
+                            ▶️ Execute Query
+                        </button>
+                        <div class="query-result" id="result-crud-create"></div>
+                    </div>
+
+                    <!-- READ -->
+                    <div class="query-card-modern">
+                        <div class="query-header">
+                            <div class="query-number">2</div>
+                            <h3>Read - Find Courses</h3>
+                        </div>
+                        <div class="query-description">
+                            Find courses by category. Modify the filter criteria.
+                        </div>
+
+                        <div class="query-editor">
+                            <div class="editor-toolbar">
+                                <button onclick="resetQuery('crud-read')">↺ Reset</button>
+                                <button onclick="formatQuery('crud-read')">✨ Format</button>
+                            </div>
+                            <textarea id="query-crud-read" spellcheck="false">db.courses.find({
+  // Filter by any field
+}).limit(5)</textarea>
+                        </div>
+
+                        <button class="btn btn-primary execute-btn" onclick="executeCustomQuery('crud-read')">
+                            ▶️ Execute Query
+                        </button>
+                        <div class="query-result" id="result-crud-read"></div>
+                    </div>
+
+                    <!-- UPDATE -->
+                    <div class="query-card-modern">
+                        <div class="query-header">
+                            <div class="query-number">3</div>
+                            <h3>Update - Modify Price</h3>
+                        </div>
+                        <div class="query-description">
+                            Update course price. Change the new price value.
+                        </div>
+
+                        <div class="query-editor">
+                            <div class="editor-toolbar">
+                                <button onclick="resetQuery('crud-update')">↺ Reset</button>
+                                <button onclick="formatQuery('crud-update')">✨ Format</button>
+                            </div>
+                            <textarea id="query-crud-update" spellcheck="false">db.courses.updateOne(
+  { /* filter */ },
+  { $set: { price: 79.99 } }
+)</textarea>
+                        </div>
+
+                        <button class="btn btn-primary execute-btn" onclick="executeCustomQuery('crud-update')">
+                            ▶️ Execute Query
+                        </button>
+                        <div class="query-result" id="result-crud-update"></div>
+                    </div>
+
+                    <!-- DELETE -->
+                    <div class="query-card-modern">
+                        <div class="query-header">
+                            <div class="query-number">4</div>
+                            <h3>Delete - Remove Inactive</h3>
+                        </div>
+                        <div class="query-description">
+                            Delete inactive students. Use reset button to restore data.
+                        </div>
+
+                        <div class="query-editor">
+                            <div class="editor-toolbar">
+                                <button onclick="resetQuery('crud-delete')">↺ Reset</button>
+                                <button onclick="formatQuery('crud-delete')">✨ Format</button>
+                            </div>
+                            <textarea id="query-crud-delete" spellcheck="false">db.students.deleteMany({
+  status: "inactive"
+})</textarea>
+                        </div>
+
+                        <button class="btn btn-danger execute-btn" onclick="executeCustomQuery('crud-delete')">
+                            ▶️ Execute Query
+                        </button>
+                        <div class="query-result" id="result-crud-delete"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Queries -->
+            <div class="query-section mt-xl">
+                <div class="section-header">
+                    <div>
+                        <h2>🚀 B. Advanced Queries</h2>
+                        <p class="section-subtitle">Sorting, filtering, and aggregations</p>
+                    </div>
+                </div>
+
+                <div class="query-grid">
+                    <div class="query-card-modern">
+                        <div class="query-header">
+                            <div class="query-number">5</div>
+                            <h3>Top Rated Courses</h3>
+                        </div>
+                        <div class="query-editor">
+                            <div class="editor-toolbar">
+                                <button onclick="resetQuery('advanced-top')">↺ Reset</button>
+                            </div>
+                            <textarea id="query-advanced-top" spellcheck="false">db.courses.find()
+  .sort({ rating: -1 })
+  .limit(5)</textarea>
+                        </div>
+                        <button class="btn btn-success execute-btn" onclick="executeCustomQuery('advanced-top')">
+                            ▶️ Execute
+                        </button>
+                        <div class="query-result" id="result-advanced-top"></div>
+                    </div>
+
+                    <div class="query-card-modern">
+                        <div class="query-header">
+                            <div class="query-number">6</div>
+                            <h3>Students by Country</h3>
+                        </div>
+                        <div class="query-editor">
+                            <div class="editor-toolbar">
+                                <button onclick="resetQuery('advanced-country')">↺ Reset</button>
+                            </div>
+                            <textarea id="query-advanced-country" spellcheck="false">db.students.aggregate([
+  {
+    $group: {
+      _id: "$country",
+      count: { $sum: 1 }
+    }
+  },
+  { $sort: { count: -1 } },
+  { $limit: 10 }
+])</textarea>
+                        </div>
+                        <button class="btn btn-success execute-btn" onclick="executeCustomQuery('advanced-country')">
+                            ▶️ Execute
+                        </button>
+                        <div class="query-result" id="result-advanced-country"></div>
+                    </div>
+
+                    <div class="query-card-modern">
+                        <div class="query-header">
+                            <div class="query-number">7</div>
+                            <h3>Total Revenue</h3>
+                        </div>
+                        <div class="query-editor">
+                            <div class="editor-toolbar">
+                                <button onclick="resetQuery('advanced-revenue')">↺ Reset</button>
+                            </div>
+                            <textarea id="query-advanced-revenue" spellcheck="false">db.payments.aggregate([
+  {
+    $group: {
+      _id: null,
+      total: { $sum: "$amount" },
+      count: { $sum: 1 },
+      avg: { $avg: "$amount" }
+    }
+  }
+])</textarea>
+                        </div>
+                        <button class="btn btn-success execute-btn" onclick="executeCustomQuery('advanced-revenue')">
+                            ▶️ Execute
+                        </button>
+                        <div class="query-result" id="result-advanced-revenue"></div>
+                    </div>
+
+                    <div class="query-card-modern">
+                        <div class="query-header">
+                            <div class="query-number">8</div>
+                            <h3>Enrollment Stats</h3>
+                        </div>
+                        <div class="query-editor">
+                            <div class="editor-toolbar">
+                                <button onclick="resetQuery('advanced-enrollment')">↺ Reset</button>
+                            </div>
+                            <textarea id="query-advanced-enrollment" spellcheck="false">db.enrollments.aggregate([
+  {
+    $group: {
+      _id: "$status",
+      count: { $sum: 1 }
+    }
+  }
+])</textarea>
+                        </div>
+                        <button class="btn btn-success execute-btn" onclick="executeCustomQuery('advanced-enrollment')">
+                            ▶️ Execute
+                        </button>
+                        <div class="query-result" id="result-advanced-enrollment"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script>
+        // Store original queries
+        const originalQueries = {};
+        document.querySelectorAll('textarea[id^="query-"]').forEach(textarea => {
+            originalQueries[textarea.id] = textarea.value;
+        });
+
+        function showResetWarning() {
+            document.getElementById('resetWarning').classList.add('show');
+        }
+
+        function hideResetWarning() {
+            document.getElementById('resetWarning').classList.remove('show');
+        }
+
+        async function resetDatabase() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Resetting...';
+
+            try {
+                const response = await fetch('/api/reset-database', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Database reset successfully! Page will reload.');
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Network error: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✅ Yes, Reset Database';
+            }
+        }
+
+        function resetQuery(queryId) {
+            const textarea = document.getElementById(`query-${queryId}`);
+            if (textarea && originalQueries[textarea.id]) {
+                textarea.value = originalQueries[textarea.id];
+            }
+        }
+
+        function formatQuery(queryId) {
+            const textarea = document.getElementById(`query-${queryId}`);
+            if (textarea) {
+                try {
+                    // Simple formatting
+                    let formatted = textarea.value
+                        .replace(/\{/g, '{\n  ')
+                        .replace(/\}/g, '\n}')
+                        .replace(/,/g, ',\n  ');
+                    textarea.value = formatted;
+                } catch (e) {
+                    console.error('Format error:', e);
+                }
+            }
+        }
+
+        async function executeCustomQuery(queryId) {
+            const textarea = document.getElementById(`query-${queryId}`);
+            const resultDiv = document.getElementById(`result-${queryId}`);
+            const btn = event.target;
+
+            resultDiv.innerHTML = '<div class="loading">⏳ Executing query...</div>';
+            resultDiv.style.display = 'block';
+            btn.disabled = true;
+            btn.textContent = '⏳ Executing...';
+
+            try {
+                const response = await fetch('/api/execute-custom-query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        queryId,
+                        queryText: textarea.value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML = `
+            <div class="result-success">
+              <div class="result-header">✅ Query executed successfully!</div>
+              <div class="result-data">
+                <pre><code class="language-javascript">${JSON.stringify(data.result, null, 2)}</code></pre>
+              </div>
+            </div>
+          `;
+                    Prism.highlightAllUnder(resultDiv);
+                } else {
+                    resultDiv.innerHTML = `
+            <div class="result-error">
+              <div class="result-header">❌ Error executing query</div>
+              <div class="result-data">${data.error}</div>
+            </div>
+          `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+          <div class="result-error">
+            <div class="result-header">❌ Network error</div>
+            <div class="result-data">${error.message}</div>
+          </div>
+        `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '▶️ Execute Query';
+            }
+        }
+
+        // Animate cards
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.query-card-modern, .stat-card').forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = `all 0.6s ease ${index * 0.05}s`;
+            observer.observe(el);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal</title>
+    <meta name="description" content="Interactive terminal for executing system commands">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        :root {
+            --mongo-green: #13AA52;
+            --mongo-green-alt: #23AA4A;
+            --deep-dark: #001E2B;
+            --deep-mid: #0D2B36;
+            --deep-light: #243641;
+            --neutral-light: #C9D1D9;
+            --neutral-lightest: #F5F6F7;
+            --accent-blue: #1168E3;
+            --accent-purple: #8A51E5;
+            --accent-orange: #F97316;
+            --accent-red: #EB5757;
+            --accent-yellow: #F59E0B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--neutral-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background - using theme.css for orbs and particles */
+
+        /* Main Container */
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--neutral-light);
+            padding: 0.6rem 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(19, 170, 82, 0.1);
+            border-color: var(--mongo-green);
+            color: var(--mongo-green);
+        }
+
+        .terminal-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .terminal-title h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, var(--neutral-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .terminal-title .icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 0 10px var(--mongo-green));
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--neutral-light);
+            padding: 0.6rem 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(19, 170, 82, 0.1);
+            border-color: var(--mongo-green);
+        }
+
+        .action-btn.danger:hover {
+            background: rgba(235, 87, 87, 0.1);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        /* Terminal Window */
+        .terminal-window {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+            min-height: 500px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Terminal Title Bar */
+        .terminal-titlebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .titlebar-dots {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .dot:hover {
+            transform: scale(1.2);
+        }
+
+        .dot-red {
+            background: #FF5F57;
+        }
+
+        .dot-yellow {
+            background: #FFBD2E;
+        }
+
+        .dot-green {
+            background: #28CA42;
+        }
+
+        .titlebar-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .titlebar-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--mongo-green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(19, 170, 82, 0.7);
+            }
+
+            50% {
+                opacity: 0.5;
+                box-shadow: 0 0 0 6px rgba(19, 170, 82, 0);
+            }
+        }
+
+        /* Terminal Content */
+        .terminal-content {
+            flex: 1;
+            padding: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #terminal {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Custom Terminal Styling */
+        .xterm {
+            height: 100% !important;
+        }
+
+        .xterm-viewport {
+            background: transparent !important;
+        }
+
+        .xterm-screen {
+            height: 100% !important;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(19, 170, 82, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(19, 170, 82, 0.5);
+        }
+
+        /* Info Panel */
+        .info-panel {
+            background: rgba(13, 43, 54, 0.5);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-top: 1rem;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .info-icon {
+            font-size: 1.25rem;
+            opacity: 0.8;
+        }
+
+        .info-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .info-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--mongo-green);
+        }
+
+        /* Keyboard shortcuts hint */
+        .shortcuts-hint {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: rgba(13, 43, 54, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 0.75rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .shortcuts-hint.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .shortcut-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .shortcut-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .shortcut-key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--mongo-green);
+        }
+
+        /* Fullscreen mode */
+        .fullscreen .terminal-header,
+        .fullscreen .info-panel {
+            display: none;
+        }
+
+        .fullscreen .terminal-window {
+            border-radius: 0;
+            min-height: 100vh;
+        }
+
+        .fullscreen .container {
+            padding: 0;
+            max-width: none;
+        }
+
+        /* Command suggestions popup */
+        .suggestions-popup {
+            position: absolute;
+            bottom: 100%;
+            left: 1rem;
+            background: rgba(13, 43, 54, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(19, 170, 82, 0.3);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        .suggestions-popup.active {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            transition: background 0.2s ease;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.selected {
+            background: rgba(19, 170, 82, 0.2);
+        }
+
+        .suggestion-cmd {
+            color: var(--mongo-green);
+        }
+
+        .suggestion-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--mongo-green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .terminal-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .titlebar-info {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background Effects -->
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Keyboard Shortcuts Hint -->
+    <div class="shortcuts-hint" id="shortcuts-hint">
+        <div style="margin-bottom: 0.5rem; font-weight: 600; color: var(--mongo-green);">⌨️ Shortcuts</div>
+        <div class="shortcut-row">
+            <span>Clear</span>
+            <span class="shortcut-key">Ctrl+L</span>
+        </div>
+        <div class="shortcut-row">
+            <span>History Up</span>
+            <span class="shortcut-key">↑</span>
+        </div>
+        <div class="shortcut-row">
+            <span>History Down</span>
+            <span class="shortcut-key">↓</span>
+        </div>
+        <div class="shortcut-row">
+            <span>Fullscreen</span>
+            <span class="shortcut-key">F11</span>
+        </div>
+        <div class="shortcut-row">
+            <span>Help</span>
+            <span class="shortcut-key">?</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="terminal-header">
+            <div class="header-left">
+                <a href="/" class="back-btn">← Back</a>
+                <div class="terminal-title">
+                    <span class="icon">💻</span>
+                    <h1>System Terminal</h1>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="action-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">
+                    ⛶ Fullscreen
+                </button>
+                <button class="action-btn" onclick="toggleShortcuts()" title="Show Shortcuts">
+                    ⌨️ Shortcuts
+                </button>
+                <button class="action-btn danger" onclick="clearTerminal()" title="Clear Terminal">
+                    🗑️ Clear
+                </button>
+            </div>
+        </header>
+
+        <!-- Terminal Window -->
+        <div class="terminal-window">
+            <div class="terminal-titlebar">
+                <div class="titlebar-dots">
+                    <div class="dot dot-red" onclick="window.location.href='/'"></div>
+                    <div class="dot dot-yellow" onclick="minimizeTerminal()"></div>
+                    <div class="dot dot-green" onclick="toggleFullscreen()"></div>
+                </div>
+                <div class="titlebar-title">PowerShell</div>
+                <div class="titlebar-info">
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Connected</span>
+                    </div>
+                    <span id="current-dir">~/</span>
+                </div>
+            </div>
+            <div class="terminal-content">
+                <div id="terminal"></div>
+                <div class="loading-overlay" id="loading-overlay">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-icon">🖥️</span>
+                    <div class="info-text">
+                        <span class="info-label">Platform</span>
+                        <span class="info-value" id="platform-info">Windows</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <span class="info-icon">📁</span>
+                    <div class="info-text">
+                        <span class="info-label">Working Directory</span>
+                        <span class="info-value" id="cwd-info">Loading...</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <span class="info-icon">📊</span>
+                    <div class="info-text">
+                        <span class="info-label">Commands Executed</span>
+                        <span class="info-value" id="cmd-count">0</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <span class="info-icon">⏱️</span>
+                    <div class="info-text">
+                        <span class="info-label">Session Started</span>
+                        <span class="info-value" id="session-time">Just now</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- xterm.js -->
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js"></script>
+
+    <script>
+        // Terminal configuration
+        const term = new Terminal({
+            fontSize: 14,
+            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+            cursorBlink: true,
+            cursorStyle: 'bar',
+            theme: {
+                background: 'transparent',
+                foreground: '#C9D1D9',
+                cursor: '#13AA52',
+                cursorAccent: '#001E2B',
+                selectionBackground: 'rgba(19, 170, 82, 0.3)',
+                black: '#0D2B36',
+                red: '#EB5757',
+                green: '#13AA52',
+                yellow: '#F59E0B',
+                blue: '#1168E3',
+                magenta: '#8A51E5',
+                cyan: '#00ED64',
+                white: '#C9D1D9',
+                brightBlack: '#243641',
+                brightRed: '#FF6B6B',
+                brightGreen: '#23AA4A',
+                brightYellow: '#FFBD2E',
+                brightBlue: '#4A90D9',
+                brightMagenta: '#B47AEA',
+                brightCyan: '#00FFB3',
+                brightWhite: '#FFFFFF'
+            },
+            allowTransparency: true,
+            convertEol: true,
+            scrollback: 1000
+        });
+
+        // Addons
+        const fitAddon = new FitAddon.FitAddon();
+        const webLinksAddon = new WebLinksAddon.WebLinksAddon();
+
+        term.loadAddon(fitAddon);
+        term.loadAddon(webLinksAddon);
+
+        // Open terminal
+        const terminalContainer = document.getElementById('terminal');
+        term.open(terminalContainer);
+        fitAddon.fit();
+
+        // State
+        let commandBuffer = '';
+        let commandHistory = JSON.parse(localStorage.getItem('terminal_history') || '[]');
+        let historyIndex = commandHistory.length;
+        let currentDir = '';
+        let commandCount = parseInt(localStorage.getItem('terminal_cmd_count') || '0');
+        const sessionStart = new Date();
+        const PROMPT = '\x1b[32m❯\x1b[0m ';
+
+        // Update stats
+        document.getElementById('cmd-count').textContent = commandCount;
+
+        // Welcome message
+        function showWelcome() {
+            term.writeln('\x1b[36m╔══════════════════════════════════════════════════════════════╗\x1b[0m');
+            term.writeln('\x1b[36m║\x1b[0m  \x1b[1;32m💻  System Terminal\x1b[0m                                          \x1b[36m║\x1b[0m');
+            term.writeln('\x1b[36m║\x1b[0m  \x1b[90mPowered by Node.js & PowerShell\x1b[0m                             \x1b[36m║\x1b[0m');
+            term.writeln('\x1b[36m╚══════════════════════════════════════════════════════════════╝\x1b[0m');
+            term.writeln('');
+            term.writeln('\x1b[33m  Available commands:\x1b[0m');
+            term.writeln('    \x1b[32mhelp\x1b[0m      - Show available commands');
+            term.writeln('    \x1b[32mclear\x1b[0m     - Clear the terminal');
+            term.writeln('    \x1b[32mdir/ls\x1b[0m    - List directory contents');
+            term.writeln('    \x1b[32mcd <path>\x1b[0m - Change directory');
+            term.writeln('    \x1b[32mmongosh\x1b[0m   - Open MongoDB shell commands info');
+            term.writeln('');
+            term.writeln('\x1b[90m  Type any command and press Enter to execute.\x1b[0m');
+            term.writeln('\x1b[90m  Use ↑/↓ arrows for command history.\x1b[0m');
+            term.writeln('');
+            writePrompt();
+        }
+
+        function writePrompt() {
+            term.write(PROMPT);
+        }
+
+        // Command Queue System to handle rapid inputs (pastes)
+        let commandQueue = [];
+        let isProcessingQueue = false;
+
+        async function queueCommand(cmd) {
+            commandQueue.push(cmd);
+            processQueue();
+        }
+
+        async function processQueue() {
+            if (isProcessingQueue || commandQueue.length === 0) return;
+            isProcessingQueue = true;
+
+            try {
+                // Process all commands in queue sequentially
+                while (commandQueue.length > 0) {
+                    const cmd = commandQueue.shift();
+                    await executeCommand(cmd, true); // true = suppress redundant prompts if needed, but here we want standard behavior
+                }
+            } finally {
+                isProcessingQueue = false;
+            }
+        }
+
+        // Execute command via API
+        async function executeCommand(cmd, fromQueue = false) {
+            if (!cmd.trim()) {
+                writePrompt();
+                return;
+            }
+
+            // Built-in commands
+            const trimmedCmd = cmd.trim().toLowerCase();
+
+            if (trimmedCmd === 'clear' || trimmedCmd === 'cls') {
+                term.clear();
+                writePrompt();
+                return;
+            }
+
+            if (trimmedCmd === 'help') {
+                showHelp();
+                writePrompt();
+                return;
+            }
+
+            // Client-side mongosh blocking removed to allow server simulation
+
+
+            // Add to history
+            if (commandHistory[commandHistory.length - 1] !== cmd) {
+                commandHistory.push(cmd);
+                if (commandHistory.length > 100) commandHistory.shift();
+                localStorage.setItem('terminal_history', JSON.stringify(commandHistory));
+            }
+            historyIndex = commandHistory.length;
+
+            // Update command count
+            commandCount++;
+            document.getElementById('cmd-count').textContent = commandCount;
+            localStorage.setItem('terminal_cmd_count', commandCount.toString());
+
+            // Show loading
+            document.getElementById('loading-overlay').classList.add('active');
+
+            try {
+                const response = await fetch('/api/execute-command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: cmd, cwd: currentDir })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.output) {
+                        // Process output for colors
+                        term.writeln(result.output);
+                    }
+                    if (result.cwd) {
+                        currentDir = result.cwd;
+                        document.getElementById('current-dir').textContent = shortenPath(currentDir);
+                        document.getElementById('cwd-info').textContent = currentDir;
+                    }
+                } else {
+                    term.writeln(`\x1b[31m${result.error || 'Command failed'}\x1b[0m`);
+                }
+            } catch (error) {
+                term.writeln(`\x1b[31mError: ${error.message}\x1b[0m`);
+            } finally {
+                // Hide loading only if queue is empty or we manage it globally
+                // But since we await one by one, it's safe to toggle here
+                document.getElementById('loading-overlay').classList.remove('active');
+                writePrompt();
+            }
+        }
+
+        function shortenPath(path) {
+            if (path.length > 40) {
+                const parts = path.split(/[/\\]/);
+                if (parts.length > 3) {
+                    return parts[0] + '/.../' + parts.slice(-2).join('/');
+                }
+            }
+            return path;
+        }
+
+        // Handle input with better paste support
+        term.onData(data => {
+            // Arrow keys (Escape sequences) - Handle strictly as chunks
+            if (data.startsWith('\x1b[')) {
+                // Up arrow
+                if (data === '\x1b[A') {
+                    if (historyIndex > 0) {
+                        historyIndex--;
+                        replaceInput(commandHistory[historyIndex]);
+                    }
+                    return;
+                }
+                // Down arrow
+                if (data === '\x1b[B') {
+                    if (historyIndex < commandHistory.length - 1) {
+                        historyIndex++;
+                        replaceInput(commandHistory[historyIndex]);
+                    } else {
+                        historyIndex = commandHistory.length;
+                        replaceInput('');
+                    }
+                    return;
+                }
+                return; // Ignore other sequences for now
+            }
+
+            // Iterate character by character (handles parsing of pasted text)
+            for (let i = 0; i < data.length; i++) {
+                const char = data[i];
+                const code = char.charCodeAt(0);
+
+                // Enter (\r) or Newline (\n)
+                if (code === 13 || code === 10) {
+                    // Only execute if buffer has content or just newline (which prints prompt)
+                    // If we just handled \r, we might want to skip \n if it follows immediately, 
+                    // but command queue handles empty commands gracefully (prints prompt).
+                    term.writeln('');
+                    const cmdToRun = commandBuffer;
+                    commandBuffer = '';
+                    queueCommand(cmdToRun);
+                }
+                // Backspace (DEL)
+                else if (code === 127) {
+                    if (commandBuffer.length > 0) {
+                        commandBuffer = commandBuffer.slice(0, -1);
+                        term.write('\b \b');
+                    }
+                }
+                // Ctrl+C
+                else if (code === 3) {
+                    term.writeln('^C');
+                    commandBuffer = '';
+                    writePrompt();
+                }
+                // Ctrl+L
+                else if (code === 12) {
+                    term.clear();
+                    writePrompt();
+                }
+                // Regular Printable Characters
+                else if (code >= 32) {
+                    commandBuffer += char;
+                    term.write(char);
+                }
+            }
+        });
+
+        function replaceInput(newInput) {
+            // Clear current input
+            term.write('\r' + PROMPT + ' '.repeat(commandBuffer.length) + '\r' + PROMPT);
+            commandBuffer = newInput;
+            term.write(commandBuffer);
+        }
+
+        // Utility functions
+        function clearTerminal() {
+            term.clear();
+            writePrompt();
+        }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            setTimeout(() => fitAddon.fit(), 100);
+        }
+
+        function toggleShortcuts() {
+            document.getElementById('shortcuts-hint').classList.toggle('visible');
+        }
+
+        function minimizeTerminal() {
+            // Could minimize to a smaller view
+        }
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            fitAddon.fit();
+        });
+
+        // Initialize
+        showWelcome();
+
+        // Get initial directory
+        fetch('/api/execute-command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: 'cd', cwd: '' })
+        }).then(r => r.json()).then(result => {
+            if (result.cwd) {
+                currentDir = result.cwd;
+                document.getElementById('current-dir').textContent = shortenPath(currentDir);
+                document.getElementById('cwd-info').textContent = currentDir;
+            }
+        });
+
+        // Update session time
+        setInterval(() => {
+            const elapsed = Math.floor((new Date() - sessionStart) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            document.getElementById('session-time').textContent =
+                mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        }, 1000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+            if (e.key === '?' && !e.ctrlKey && document.activeElement.tagName !== 'INPUT') {
+                toggleShortcuts();
+            }
+        });
+    </script>
+    <script src="/js/background.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,485 @@
+/* ============================================
+   RADICAL FLUID MONGO - DESIGN SYSTEM
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&family=Space+Mono:wght@400&display=swap');
+
+:root {
+  /* Atmosphere */
+  --void-deep: #000B10;
+  --void-mid: #001E2B;
+  --void-light: #0D2B36;
+
+  /* Biological Energy */
+  --mongo-glow: #13AA52;
+  --mongo-pulse: #23AA4A;
+  --mongo-cyan: #00ED64;
+
+  /* Accents (Spectral) */
+  --spectral-blue: rgba(17, 104, 227, 0.8);
+  --spectral-purple: rgba(138, 81, 229, 0.8);
+
+  /* Materials */
+  --glass-surface: rgba(13, 43, 54, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--void-deep);
+  color: #C9D1D9;
+  font-family: 'Outfit', sans-serif;
+  overflow: hidden;
+  /* Immersive feel */
+  height: 100vh;
+  perspective: 1000px;
+}
+
+/* ============================================
+   AMBIENT BACKGROUND (The "Organism")
+   ============================================ */
+.cosmos {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 50%, var(--void-mid), var(--void-deep) 70%);
+  overflow: hidden;
+}
+
+/* Drifting Mist */
+.mist {
+  position: absolute;
+  width: 200vw;
+  height: 200vh;
+  top: -50%;
+  left: -50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(19, 170, 82, 0.03), transparent 20%),
+    radial-gradient(circle at 70% 60%, rgba(17, 104, 227, 0.03), transparent 25%);
+  animation: drift 60s infinite linear;
+  pointer-events: none;
+}
+
+@keyframes drift {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+/* ============================================
+   FLUID UI COMPONENTS
+   ============================================ */
+.fluid-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Floating Title */
+.ethereal-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  opacity: 0;
+  animation: materialize 2s ease-out forwards;
+}
+
+.title-glow {
+  font-size: 3rem;
+  font-weight: 200;
+  letter-spacing: -2px;
+  background: linear-gradient(to right, #fff, var(--mongo-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(19, 170, 82, 0.3);
+}
+
+.cluster-status {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--mongo-green-primary);
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--mongo-glow);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--mongo-glow);
+  animation: heartbeat 3s infinite ease-in-out;
+}
+
+/* Constellation Menu (The Queries) */
+.constellation {
+  display: flex;
+  gap: 2rem;
+  perspective: 1000px;
+}
+
+.node-card {
+  width: 220px;
+  height: 180px;
+  background: var(--glass-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  animation: floatUp 0.8s ease-out forwards;
+}
+
+/* Staggered entry */
+.node-card:nth-child(1) {
+  animation-delay: 0.2s;
+}
+
+.node-card:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.node-card:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+.node-card:nth-child(4) {
+  animation-delay: 0.8s;
+}
+
+.node-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.node-card:hover {
+  transform: translateY(-20px) rotateX(5deg);
+  border-color: var(--mongo-glow);
+  box-shadow: 0 20px 60px rgba(19, 170, 82, 0.15);
+}
+
+.node-card:hover::before {
+  opacity: 1;
+}
+
+.node-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--mongo-glow);
+  filter: drop-shadow(0 0 8px rgba(19, 170, 82, 0.4));
+  transition: transform 0.6s ease;
+}
+
+.node-card:hover .node-icon {
+  transform: scale(1.2) rotate(10deg);
+}
+
+.node-label {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #fff;
+}
+
+.node-sub {
+  font-size: 0.8rem;
+  color: #8996A0;
+}
+
+/* ============================================
+   FLOATING RESULTS PANE
+   ============================================ */
+.overlay-plane {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* Let clicks pass through when hidden */
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.result-prism {
+  width: 800px;
+  max-width: 90%;
+  max-height: 80vh;
+  background: rgba(0, 15, 20, 0.85);
+  /* Darker glass */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(19, 170, 82, 0.3);
+  border-radius: 30px;
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.5);
+  padding: 2rem;
+  opacity: 0;
+  transform: scale(0.9) translateY(50px);
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.result-prism.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.prism-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 1rem;
+}
+
+.prism-title {
+  color: var(--mongo-glow);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
+
+.code-stream {
+  flex: 1;
+  overflow: AUTO;
+  color: #A5B3CE;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Scrollbar invisible but functional */
+.code-stream::-webkit-scrollbar {
+  width: 4px;
+}
+
+.code-stream::-webkit-scrollbar-thumb {
+  background: var(--mongo-glow);
+  border-radius: 2px;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes materialize {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.5);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+/* Background Particles (JS Injected) */
+.particle {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: floatParticle 20s infinite linear;
+}
+
+@keyframes floatParticle {
+  from {
+    transform: translateY(100vh) translateX(0);
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  to {
+    transform: translateY(-20vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   NAVBAR & NAVIGATION
+   ============================================ */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: rgba(0, 11, 16, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: linear-gradient(135deg, #fff 0%, var(--mongo-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+}
+
+.navbar-menu {
+  display: flex;
+  list-style: none;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-menu li a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.navbar-menu li a:hover {
+  color: var(--mongo-cyan);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.navbar-menu li a.active {
+  color: #fff;
+  background: rgba(19, 170, 82, 0.2);
+  border: 1px solid rgba(19, 170, 82, 0.3);
+}
+
+/* Adjust page content for fixed navbar */
+body {
+  padding-top: 70px !important;
+  overflow-y: auto !important;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--void-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--void-light);
+  border-radius: 5px;
+  border: 2px solid var(--void-deep);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mongo-glow);
+}

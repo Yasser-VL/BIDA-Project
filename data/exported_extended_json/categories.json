@@ -1,0 +1,8 @@
+{"_id": {"$oid": "693a7e13fbe7f00d887c88f0"}, "name": "Programming", "description": "Software development and coding"}
+{"_id": {"$oid": "693a7e13fbe7f00d887c88f1"}, "name": "Data Science", "description": "Analytics, ML, and AI"}
+{"_id": {"$oid": "693a7e13fbe7f00d887c88f2"}, "name": "Business", "description": "Management and entrepreneurship"}
+{"_id": {"$oid": "693a7e13fbe7f00d887c88f3"}, "name": "Design", "description": "UI/UX and graphic design"}
+{"_id": {"$oid": "693a7e13fbe7f00d887c88f4"}, "name": "DevOps", "description": "Infrastructure and deployment"}
+{"_id": {"$oid": "693a7e13fbe7f00d887c88f5"}, "name": "Mathematics", "description": "Pure and applied mathematics"}
+{"_id": {"$oid": "693a7e13fbe7f00d887c88f6"}, "name": "Languages", "description": "Foreign language learning"}
+{"_id": {"$oid": "693a7e13fbe7f00d887c88f7"}, "name": "Personal Development", "description": "Self-improvement and productivity"}

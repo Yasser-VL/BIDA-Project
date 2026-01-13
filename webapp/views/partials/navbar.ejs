@@ -1,0 +1,33 @@
+<nav class="navbar">
+    <div class="navbar-container">
+        <a href="/" class="navbar-brand">EduPlatform</a>
+        <ul class="navbar-menu">
+            <li><a href="/" class="<%= typeof page !== 'undefined' && page === 'home' ? 'active' : '' %>">🏠 Home</a>
+            </li>
+            <li><a href="/courses" class="<%= typeof page !== 'undefined' && page === 'courses' ? 'active' : '' %>">📚
+                    Courses</a></li>
+            <li><a href="/students" class="<%= typeof page !== 'undefined' && page === 'students' ? 'active' : '' %>">👥
+                    Students</a></li>
+            <li><a href="/instructors"
+                    class="<%= typeof page !== 'undefined' && page === 'instructors' ? 'active' : '' %>">👨‍🏫
+                    Instructors</a>
+            </li>
+            <li><a href="/enrollments"
+                    class="<%= typeof page !== 'undefined' && page === 'enrollments' ? 'active' : '' %>">📝
+                    Enrollments</a></li>
+            <li><a href="/analytics"
+                    class="<%= typeof page !== 'undefined' && page === 'analytics' ? 'active' : '' %>">📊
+                    Analytics</a></li>
+            <li><a href="/terminal" class="<%= typeof page !== 'undefined' && page === 'terminal' ? 'active' : '' %>">💻
+                    Terminal</a></li>
+            <li><a href="/mongodb-tutorial"
+                    class="<%= typeof page !== 'undefined' && page === 'mongodb-tutorial' ? 'active' : '' %>">📖
+                    MongoDB Guide</a></li>
+            <li><a href="/data-generator"
+                    class="<%= typeof page !== 'undefined' && page === 'data-generator' ? 'active' : '' %>">⚙️
+                    Data Engine</a></li>
+            <li><a href="/quiz" class="<%= typeof page !== 'undefined' && page === 'quiz' ? 'active' : '' %>">🎓
+                    Quiz</a></li>
+        </ul>
+    </div>
+</nav>
