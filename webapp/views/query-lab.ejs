@@ -708,6 +708,22 @@
         </div>
     </div>
 
+    <!-- Query Explanation Modal -->
+    <div class="data-modal" id="explanation-modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.5rem;">💡</span> Query Explanation
+                </h2>
+                <button class="close-btn" onclick="closeExplanationModal()">✕ Close</button>
+            </div>
+            <div id="explanation-body"
+                style="font-family: 'Inter', sans-serif; line-height: 1.7; color: var(--neutral-light);">
+                <!-- Content injected here -->
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <header class="header">
@@ -875,6 +891,8 @@
                             <button class="icon-btn" onclick="copyQuery()" title="Copy">📋</button>
                             <button class="icon-btn" onclick="toggleHistory()" title="History">📜</button>
                             <button class="icon-btn" onclick="toggleShortcuts()" title="Shortcuts">⌨️</button>
+                            <button class="execute-btn" onclick="explainQuery()"
+                                style="background: #3b82f6; margin-right: 0.5rem; border: none;">💡 Explain</button>
                             <button class="execute-btn" onclick="executeQuery()">▶ Execute</button>
                         </div>
                     </div>
@@ -1470,9 +1488,153 @@
             'agg-category': 'agg-category-stats',
             'agg-performance': 'agg-student-performance',
             'agg-trends': 'agg-enrollment-trends'
-        }
+        };
 
-            ;
+        const queryExplanations = {
+            'crud-create': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Create (Insert)</h3>
+                <p><strong>Goal:</strong> Add a new course to the catalog.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Key Concept: <code>insertOne()</code></strong>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li>Inserts a single document into the collection.</li>
+                        <li><strong>ObjectId Refs:</strong> We link to existing <code>category_id</code> and <code>instructor_id</code> manually to maintain relationships.</li>
+                        <li><strong>Safe Defaults:</strong> Fields like <code>rating: 0</code> are initialized to ensure data consistency.</li>
+                    </ul>
+                </div>
+            `,
+            'crud-read': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Read (Find)</h3>
+                <p><strong>Goal:</strong> Fetch specific courses efficiently.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Key Concepts:</strong>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li><code>find({ query })</code>: Filters data. Here we only want courses from one specific category.</li>
+                        <li><code>project({ ... })</code>: <strong>Selectively returns fields</strong> (title, price). This reduces bandwidth usage.</li>
+                        <li><code>limit(5)</code>: Essential for performance. It stops the database from scanning or returning too many records.</li>
+                    </ul>
+                </div>
+            `,
+            'crud-update': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Update (Modify)</h3>
+                <p><strong>Goal:</strong> Change the price of a specific course.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Critical Operator: <code>$set</code></strong>
+                    <p style="margin-top:0.5rem">We use <code>updateOne(filter, update)</code>.</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li>If we used <code>{ price: 99 }</code> without <code>$set</code>, MongoDB would <strong style="color: #EB5757;">replace the entire document</strong> with just that one field.</li>
+                        <li><code>$set</code> ensures we only modify the price, keeping title, rating, etc., intact.</li>
+                    </ul>
+                </div>
+            `,
+            'crud-delete': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Delete (Remove)</h3>
+                <p><strong>Goal:</strong> Clean up the database.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Command: <code>deleteMany()</code></strong>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li>Removes <strong>all</strong> documents matching the filter <code>{ status: "inactive" }</code>.</li>
+                        <li>Be careful! Unlike <code>deleteOne()</code>, this can wipe out large chunks of data if the filter is too broad.</li>
+                    </ul>
+                </div>
+            `,
+            'advanced-top': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Top Rated (Sorting)</h3>
+                <p><strong>Goal:</strong> Show the 5 highest-rated courses.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">How it works:</strong>
+                    <ol style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: decimal; color: var(--neutral-light);">
+                        <li><code>find()</code>: Selects all courses.</li>
+                        <li><code>sort({ rating: -1 })</code>: Orders them. <code>-1</code> means <strong>Descending</strong> (5 -> 0). <code>1</code> is Ascending.</li>
+                        <li><code>limit(5)</code>: Takes the top 5 from that sorted list.</li>
+                    </ol>
+                </div>
+            `,
+            'advanced-country': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Analytics: Group by Country</h3>
+                <p><strong>Goal:</strong> Count students per country.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">The Pipeline Stage: <code>$group</code></strong>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li><code>_id: "$country"</code>: Use the value of the 'country' field as the unique identifier for each group.</li>
+                        <li><code>count: { $sum: 1 }</code>: An accumulator. For every document that matched the country, add 1 to the total.</li>
+                    </ul>
+                </div>
+            `,
+            'advanced-status': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Analytics: Enrollment Status</h3>
+                <p><strong>Goal:</strong> See how many students are active vs completed.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Multiple Accumulators:</strong>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li>We calculate <code>count</code> (using <code>$sum</code>).</li>
+                        <li>We <em>also</em> calculate <code>avg_progress</code> (using <code>$avg</code>) in the same pass.</li>
+                        <li>This shows the power of aggregation: getting multiple insights from one pass over the data.</li>
+                    </ul>
+                </div>
+            `,
+            'advanced-revenue': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Global Analytics: Revenue</h3>
+                <p><strong>Goal:</strong> Calculate total earnings.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Grouping by Null:</strong>
+                    <p style="margin-top: 0.5rem;"><code>_id: null</code> is a special convention.</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li>It tells MongoDB: "Don't separate documents into buckets."</li>
+                        <li>"Treat the entire collection as one single group."</li>
+                        <li>This allows us to sum up the <code>amount</code> field across <strong>every</strong> payment document.</li>
+                    </ul>
+                </div>
+            `,
+            'agg-join': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Joins: $lookup</h3>
+                <p><strong>Goal:</strong> Get Student and Course names for an Enrollment.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Relational Data in NoSQL:</strong>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li><code>$lookup</code>: Acts like a SQL <code>LEFT JOIN</code>. It pulls the matching student document into an array field (e.g., <code>student_data</code>).</li>
+                        <li><code>$unwind</code>: Deconstructs that array. It turns <code>{ ... student_data: [{name: "John"}] }</code> into a flat object <code>{ ... student_data: {name: "John"} }</code> so we can access fields easily.</li>
+                    </ul>
+                </div>
+            `,
+            'agg-category': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Deep Dive: Category Stats</h3>
+                <p><strong>Goal:</strong> comprehensive category performance report.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Multi-Stage Pipeline:</strong>
+                    <ol style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: decimal; color: var(--neutral-light);">
+                        <li><strong>Join:</strong> Link Courses -> Categories.</li>
+                        <li><strong>Group:</strong> Bucket them by Category Name.</li>
+                        <li><strong>Stats:</strong> Calculate total courses, avg price, and avg course rating all at once.</li>
+                        <li><strong>Sort:</strong> Order by the category with the most courses/revenue.</li>
+                    </ol>
+                </div>
+            `,
+            'agg-performance': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Performance Optimization</h3>
+                <p><strong>Goal:</strong> Find the best performing students.</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Tip: Filter Early</strong>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li>We use <code>$match</code> as the <strong>First Stage</strong>.</li>
+                        <li>We only want "completed" courses. Filtering <em>before</em> we join (<code>$lookup</code>) or group saves massive processing time because we ignore useless data immediately.</li>
+                    </ul>
+                </div>
+            `,
+            'agg-trends': `
+                <h3 style="color: var(--mongo-green); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Time Series: Enrollment Trends</h3>
+                <p><strong>Goal:</strong> Visualize growth over time (Monthly).</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--mongo-green);">Data Transformation:</strong>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; list-style-type: disc; color: var(--neutral-light);">
+                        <li><code>$dateToString</code>: Converts complex timestamps (<code>2023-11-05T14:00...</code>) into simple buckets (<code>2023-11</code>).</li>
+                        <li>We then group by this string to count how many enrollments happened in that specific month.</li>
+                    </ul>
+                </div>
+            `
+        };
+
+        ;
 
         let currentQueryId = null;
         let queryHistory = JSON.parse(localStorage.getItem('queryHistory') || '[]');
@@ -1689,6 +1851,31 @@
                 // Already formatted or not JSON
             }
         }
+
+        // Explain Query
+        function explainQuery() {
+            if (!currentQueryId || !queryExplanations[currentQueryId]) {
+                alert("Please select a standard query from the list to see its explanation.");
+                return;
+            }
+
+            const modal = document.getElementById('explanation-modal');
+            const body = document.getElementById('explanation-body');
+
+            body.innerHTML = queryExplanations[currentQueryId];
+            modal.classList.add('active');
+        }
+
+        function closeExplanationModal() {
+            document.getElementById('explanation-modal').classList.remove('active');
+        }
+
+        // Close details modal on outside click (reused class)
+        document.getElementById('explanation-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'explanation-modal') {
+                closeExplanationModal();
+            }
+        });
 
         // Syntax Highlighting
         function highlightEditor() {

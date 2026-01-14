@@ -360,7 +360,8 @@
 
         .cap-c {
             top: 0;
-            left: 60px;
+            left: 50%;
+            transform: translateX(-50%);
             color: var(--mongo-green);
             border: 1px solid var(--mongo-green);
         }
@@ -471,7 +472,6 @@
                 <a href="#bson" class="nav-link">BSON</a>
                 <a href="#schema" class="nav-link">Schema</a>
                 <a href="#crud" class="nav-link">CRUD</a>
-                <a href="#internals" class="nav-link">Internals</a>
                 <a href="#distributed" class="nav-link">Distributed</a>
             </nav>
         </div>
@@ -586,62 +586,12 @@
         </section>
 
         <!-- 5. FUNDAMENTALS: Internals -->
-        <section id="internals" class="section">
-            <div class="section-header">
-                <span class="section-num">05</span>
-                <h2>Under the Hood: Engineering Internals</h2>
-            </div>
 
-            <div class="card">
-                <h3>Storage Engine: WiredTiger</h3>
-                <p>Since version 3.2, MongoDB uses <strong>WiredTiger</strong> as its default storage engine. It
-                    provides:</p>
-                <ul class="feature-list">
-                    <li><strong>Document-Level Concurrency:</strong> Unlike older engines which had collection-level
-                        locks, WiredTiger allows multiple threads to modify different documents simultaneously.</li>
-                    <li><strong>Compression:</strong> Uses block compression (Snappy) to reduce disk usage and I/O.</li>
-                    <li><strong>Journaling (WAL):</strong> Writes to a Write-Ahead Log first to ensure durability.</li>
-                    <li><strong>Checkpointing:</strong> Regularly flushes data to disk every 60 seconds or 2GB of data.
-                    </li>
-                </ul>
-
-                <h3 style="margin-top:2.5rem">Indexing Implementation (B-Trees)</h3>
-                <p>MongoDB indexes are implemented as <strong>B-Trees</strong>. This balanced tree structure allows
-                    finding documents in <code>O(log n)</code> time.</p>
-
-                <div class="info-box tip">
-                    <strong>Compound Indexes:</strong> The order matters. An index on
-                    <code>{ "last": 1, "first": 1 }</code> supports queries on <code>last</code> but not on
-                    <code>first</code> alone.
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>Transactions & Consistency</h3>
-                <p>MongoDB supports <strong>Multi-Document ACID Transactions</strong> since v4.0. This allows for
-                    complex operations across multiple collections with snapshot isolation.</p>
-                <div class="code-block">
-                    <span class="c">// Multi-document transaction example</span>
-                    <span class="k">const</span> session = db.<span class="f">getMongo</span>().<span
-                        class="f">startSession</span>();
-                    session.<span class="f">startTransaction</span>();
-                    <span class="k">try</span> {
-                    db.accounts.<span class="f">updateOne</span>({ _id: <span class="s">"A"</span> }, { <span
-                        class="k">$inc</span>: { balance: <span class="n">-100</span> } });
-                    db.accounts.<span class="f">updateOne</span>({ _id: <span class="s">"B"</span> }, { <span
-                        class="k">$inc</span>: { balance: <span class="n">100</span> } });
-                    session.<span class="f">commitTransaction</span>();
-                    } <span class="k">catch</span> (e) {
-                    session.<span class="f">abortTransaction</span>();
-                    }
-                </div>
-            </div>
-        </section>
 
         <!-- 6. FUNDAMENTALS: Distributed Systems -->
         <section id="distributed" class="section">
             <div class="section-header">
-                <span class="section-num">06</span>
+                <span class="section-num">05</span>
                 <h2>Distributed Systems Theory</h2>
             </div>
 
@@ -662,40 +612,7 @@
                     </div>
                 </div>
 
-                <h3>Interactive Simulator: Write Concern</h3>
-                <p>Visualize how write acknowledgments work across a 3-node replica set.</p>
 
-                <div class="info-box" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);">
-                    <div id="wc-viz"
-                        style="display: flex; justify-content: space-around; align-items: center; padding: 1rem;">
-                        <div class="node primary"
-                            style="padding: 1rem; border: 2px solid var(--mongo-green); border-radius: 8px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: var(--text-secondary);">PRIMARY</div>
-                            <div id="node-p-status" style="font-size: 1.2rem;">🟢</div>
-                        </div>
-                        <div class="node secondary"
-                            style="padding: 1rem; border: 2px solid var(--text-secondary); border-radius: 8px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: var(--text-secondary);">SEC-1</div>
-                            <div id="node-s1-status" style="font-size: 1.2rem;">⚪</div>
-                        </div>
-                        <div class="node secondary"
-                            style="padding: 1rem; border: 2px solid var(--text-secondary); border-radius: 8px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: var(--text-secondary);">SEC-2</div>
-                            <div id="node-s2-status" style="font-size: 1.2rem;">⚪</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 1rem; margin-top: 1rem; justify-content: center;">
-                        <button onclick="simulateWrite(1)" class="nav-link"
-                            style="background: rgba(255,255,255,0.05); cursor: pointer; border: 1px solid var(--glass-border);">w:
-                            1</button>
-                        <button onclick="simulateWrite('majority')" class="nav-link"
-                            style="background: rgba(255,255,255,0.05); cursor: pointer; border: 1px solid var(--glass-border);">w:
-                            majority</button>
-                    </div>
-                    <div id="wc-log"
-                        style="text-align: center; margin-top: 1rem; font-family: monospace; font-size: 0.8rem; color: var(--mongo-green);">
-                        Waiting for write command...</div>
-                </div>
             </div>
 
             <div class="card">
@@ -711,25 +628,11 @@
         <!-- 7. Security & Real World -->
         <section id="security" class="section">
             <div class="section-header">
-                <span class="section-num">07</span>
-                <h2>Security & Ecosystem</h2>
+                <span class="section-num">06</span>
+                <h2>Ecosystem</h2>
             </div>
 
             <div class="card">
-                <h3>Security Fundamentals</h3>
-                <div class="grid-2">
-                    <div>
-                        <h4>RBAC (Role-Based Access Control)</h4>
-                        <p>User permissions are defined by roles (e.g., <code>readWrite</code>, <code>dbAdmin</code>).
-                            Avoid the "Root" user for applications.</p>
-                    </div>
-                    <div>
-                        <h4>Network & Encryption</h4>
-                        <p>TLS/SSL for data in transit. Encryption-at-Rest for data on disk. Client-Side Field Level
-                            Encryption (CSFLE) for sensitive data.</p>
-                    </div>
-                </div>
-
                 <h3>The Tooling Ecosystem</h3>
                 <div class="feature-grid">
                     <div class="feature-item">
@@ -751,7 +654,7 @@
         <!-- 8. Common Misconceptions -->
         <section class="section">
             <div class="section-header">
-                <span class="section-num">08</span>
+                <span class="section-num">07</span>
                 <h2>Common Misconceptions</h2>
             </div>
             <div class="card" style="border-top: 4px solid var(--accent-yellow)">
@@ -773,7 +676,7 @@
         <!-- 9. Evaluation -->
         <section class="section">
             <div class="section-header">
-                <span class="section-num">09</span>
+                <span class="section-num">08</span>
                 <h2>Evaluation & Closing</h2>
             </div>
             <div class="card" style="border-left: 4px solid var(--accent-blue)">
@@ -807,35 +710,6 @@
             });
         });
 
-        // Write Concern Simulator
-        function simulateWrite(wc) {
-            const log = document.getElementById('wc-log');
-            const p = document.getElementById('node-p-status');
-            const s1 = document.getElementById('node-s1-status');
-            const s2 = document.getElementById('node-s2-status');
-
-            // Reset
-            p.innerText = '🟢'; s1.innerText = '⚪'; s2.innerText = '⚪';
-            log.innerText = "Command sent to Primary...";
-
-            setTimeout(() => {
-                p.innerText = '✨';
-                log.innerText = "Primary acknowledged write.";
-                if (wc == 1) {
-                    log.innerText += " (w:1 Satisfied)";
-                } else {
-                    log.innerText = "Replicating to secondaries...";
-                    setTimeout(() => {
-                        s1.innerText = '🟢';
-                        log.innerText = "SEC-1 acknowledged. Total: 2/3 (Majority Satisfied)";
-                        setTimeout(() => {
-                            s2.innerText = '🟢';
-                            log.innerText = "SEC-2 acknowledged. Fully Replicated.";
-                        }, 800);
-                    }, 800);
-                }
-            }, 800);
-        }
     </script>
     <script src="/js/background.js"></script>
 </body>
